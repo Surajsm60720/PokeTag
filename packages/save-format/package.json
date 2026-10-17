@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test dist/**/*.test.js",
+    "test": "npm run build && node --test 'dist/**/*.test.js'",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

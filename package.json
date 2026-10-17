@@ -11,7 +11,7 @@
     "build": "npm run build -w @poketag/save-format && npm run build -w @poketag/web",
     "test": "npm run test -w @poketag/save-format",
     "lint": "npm run lint -w @poketag/web",
-    "seed:demo": "NODE_OPTIONS=--experimental-sqlite node apps/web/scripts/seed-demo.mjs"
+    "seed:demo": "NODE_OPTIONS='--experimental-sqlite --experimental-strip-types' node --experimental-strip-types apps/web/scripts/seed-demo.ts"
   },
   "engines": {
     "node": ">=20"

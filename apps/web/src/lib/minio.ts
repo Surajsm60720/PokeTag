@@ -53,3 +53,8 @@ export async function getObject(key: string): Promise<Buffer> {
   }
   return Buffer.concat(chunks);
 }
+
+export async function deleteObject(key: string): Promise<void> {
+  await ensureBucket();
+  await getMinio().removeObject(getBucket(), key);
+}

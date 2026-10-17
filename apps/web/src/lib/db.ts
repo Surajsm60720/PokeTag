@@ -24,6 +24,17 @@ export function getDb(): DatabaseSync {
   return db;
 }
 
+function columnExists(
+  database: DatabaseSync,
+  table: string,
+  column: string
+): boolean {
+  const rows = database
+    .prepare(`PRAGMA table_info(${table})`)
+    .all() as unknown as Array<{ name: string }>;
+  return rows.some((r) => r.name === column);
+}
+
 function migrate(database: DatabaseSync) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS save_slots (
@@ -63,7 +74,80 @@ function migrate(database: DatabaseSync) {
       PRIMARY KEY (device_label, slot_id),
       FOREIGN KEY (slot_id) REFERENCES save_slots(id)
     );
+
+    CREATE TABLE IF NOT EXISTS parsed_snapshots (
+      version_id TEXT PRIMARY KEY,
+      trainer_json TEXT NOT NULL DEFAULT '{}',
+      party_json TEXT NOT NULL DEFAULT '[]',
+      boxes_json TEXT NOT NULL DEFAULT '[]',
+      dex_json TEXT NOT NULL DEFAULT '{}',
+      badges_json TEXT NOT NULL DEFAULT '[]',
+      location TEXT NOT NULL DEFAULT '',
+      location_map_id INTEGER,
+      play_time_seconds INTEGER NOT NULL DEFAULT 0,
+      parser_version TEXT NOT NULL DEFAULT '',
+      is_demo INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      inventory_json TEXT NOT NULL DEFAULT '{"bag":[],"pc":[]}',
+      progress_json TEXT NOT NULL DEFAULT '{"eliteFourDefeated":null,"championDefeated":null,"note":""}',
+      FOREIGN KEY (version_id) REFERENCES save_versions(id)
+    );
   `);
+
+  if (!columnExists(database, "save_versions", "parse_status")) {
+    database.exec(
+      `ALTER TABLE save_versions ADD COLUMN parse_status TEXT NOT NULL DEFAULT 'pending'`
+    );
+  }
+  if (!columnExists(database, "save_versions", "parse_error")) {
+    database.exec(
+      `ALTER TABLE save_versions ADD COLUMN parse_error TEXT NOT NULL DEFAULT ''`
+    );
+  }
+  if (!columnExists(database, "save_versions", "parsed_at")) {
+    database.exec(`ALTER TABLE save_versions ADD COLUMN parsed_at TEXT`);
+  }
+
+  if (!columnExists(database, "parsed_snapshots", "inventory_json")) {
+    database.exec(
+      `ALTER TABLE parsed_snapshots ADD COLUMN inventory_json TEXT NOT NULL DEFAULT '{"bag":[],"pc":[]}'`
+    );
+  }
+  if (!columnExists(database, "parsed_snapshots", "progress_json")) {
+    database.exec(
+      `ALTER TABLE parsed_snapshots ADD COLUMN progress_json TEXT NOT NULL DEFAULT '{"eliteFourDefeated":null,"championDefeated":null,"note":""}'`
+    );
+  }
+
+  // Existing rows that already have snapshots are done; demos too.
+  database.exec(`
+    UPDATE save_versions
+    SET parse_status = 'done', parsed_at = COALESCE(parsed_at, uploaded_at)
+    WHERE parse_status = 'pending'
+      AND (
+        id LIKE 'demo-%'
+        OR EXISTS (SELECT 1 FROM parsed_snapshots p WHERE p.version_id = save_versions.id)
+      )
+  `);
+}
+
+export type ParseStatus = "pending" | "running" | "done" | "failed";
+
+export interface ParsedSnapshotRow {
+  version_id: string;
+  trainer_json: string;
+  party_json: string;
+  boxes_json: string;
+  dex_json: string;
+  badges_json: string;
+  location: string;
+  location_map_id: number | null;
+  play_time_seconds: number;
+  parser_version: string;
+  is_demo: number;
+  created_at: string;
+  inventory_json?: string | null;
+  progress_json?: string | null;
 }
 
 export interface SaveSlotRow {
@@ -90,4 +174,7 @@ export interface SaveVersionRow {
   note: string;
   recognized: number;
   detection_json: string;
+  parse_status: ParseStatus;
+  parse_error: string;
+  parsed_at: string | null;
 }

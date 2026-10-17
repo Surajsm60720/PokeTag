@@ -1,6 +1,6 @@
 # PokéTag
 
-Personal Pokémon save vault and trainer dashboard (working title). Phase 1: Vault MVP — upload, version, download, and convert GBA/DS saves. No auth; single-operator local use.
+Personal Pokémon save vault and trainer dashboard (working title). Phase 1 vault MVP is live; Phase 2 adds a read-only trainer dashboard (demo snapshots for every Gen 3–9 game until PKHeX parsing lands). No auth; single-operator local use.
 
 Companion docs: [Design Document](docs/design.md), [PRD](docs/prd.md).
 
@@ -45,14 +45,14 @@ Open http://localhost:3000 — empty cartridge shelf, then upload a `.sav` / `.d
 
 ### 4. Demo shelf (optional)
 
-Seed one cartridge per Gen 3–9 mainline game (GBA / DS / 3DS / Switch shelves + themes):
+Seed one cartridge per Gen 3–9 mainline game (shelves, themes, and Phase 2 demo dashboards — trainer card, party, PC, dex, badges):
 
 ```bash
 docker compose up -d   # MinIO must be running
 npm run seed:demo
 ```
 
-Refresh http://localhost:3000 — GBA and DS shelves fill with demo saves. Re-running replaces only `demo-*` slots.
+Refresh http://localhost:3000 — open any cartridge for the dashboard. Re-running replaces only `demo-*` slots.
 
 ### 5. Tests
 

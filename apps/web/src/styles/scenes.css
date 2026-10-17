@@ -1,0 +1,1424 @@
+/*
+ * Plot-driven environments — original CSS silhouettes only.
+ * Era = scene skeleton. Theme = plot accent (weather, motif, sky mood).
+ * Never ripped game art. Inspired by region/plot, not copied.
+ */
+
+/* ── Shared scene motion ─────────────────────────────────────────── */
+
+@keyframes scene-mote-drift {
+  0% {
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position:
+      12px 36px,
+      -8px 44px,
+      16px 28px,
+      -12px 40px,
+      10px 32px,
+      -6px 48px;
+  }
+}
+
+@keyframes scene-snow-drift {
+  0% {
+    background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  }
+  100% {
+    background-position:
+      0 28px,
+      8px 36px,
+      -6px 30px,
+      4px 40px,
+      -4px 24px,
+      10px 34px,
+      -10px 22px,
+      6px 38px;
+  }
+}
+
+@keyframes scene-rain-fall {
+  0% {
+    background-position: 0 0, 8px 0, 16px 0;
+  }
+  100% {
+    background-position: 0 48px, 8px 56px, 16px 40px;
+  }
+}
+
+@keyframes scene-ash-rise {
+  0% {
+    background-position: 0 40px, 12px 60px, -8px 50px, 20px 70px;
+  }
+  100% {
+    background-position: 0 -20px, 12px 0, -8px -10px, 20px 10px;
+  }
+}
+
+@keyframes scene-heat-shimmer {
+  0%,
+  100% {
+    transform: translateX(0) scaleY(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateX(3px) scaleY(1.02);
+    opacity: 0.55;
+  }
+}
+
+@keyframes scene-ribbon-drift {
+  0% {
+    transform: translateX(-4%) translateY(0);
+  }
+  100% {
+    transform: translateX(4%) translateY(2px);
+  }
+}
+
+@keyframes scene-leaf-fall {
+  0% {
+    background-position: 0 0, 20px -10px, 40px 0, 60px -8px;
+  }
+  100% {
+    background-position: 8px 50px, 12px 40px, 48px 55px, 52px 45px;
+  }
+}
+
+@keyframes scene-sparkle {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes scene-wormhole-pulse {
+  0%,
+  100% {
+    transform: scale(0.92) rotate(0deg);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scale(1.05) rotate(8deg);
+    opacity: 0.75;
+  }
+}
+
+@keyframes scene-caustic {
+  0% {
+    background-position: 0 0, 20px 10px;
+  }
+  100% {
+    background-position: 30px 20px, -10px 30px;
+  }
+}
+
+@keyframes scene-neon-flicker {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  40% {
+    opacity: 0.85;
+  }
+  42% {
+    opacity: 0.35;
+  }
+  60% {
+    opacity: 0.8;
+  }
+}
+
+/* ── Gen 3 — Kanto / Hoenn ───────────────────────────────────────── */
+
+html[data-era="gen3"] .world__ambient {
+  opacity: 0.5;
+  background-image:
+    radial-gradient(circle 2px at 10% 30%, #e8b040 0 60%, transparent 70%),
+    radial-gradient(circle 2px at 28% 55%, #d86040 0 60%, transparent 70%),
+    radial-gradient(circle 1.5px at 48% 22%, #f0d060 0 60%, transparent 70%),
+    radial-gradient(circle 2px at 66% 48%, #c05030 0 60%, transparent 70%),
+    radial-gradient(circle 1.5px at 82% 34%, #e8b040 0 60%, transparent 70%),
+    radial-gradient(circle 2px at 92% 62%, #d87040 0 60%, transparent 70%);
+  animation: scene-mote-drift 5s steps(10, jump-none) infinite;
+}
+
+/* FireRed / LeafGreen — Kanto route: fence posts + town roofs */
+html[data-theme="firered"] .world__horizon::after,
+html[data-theme="leafgreen"] .world__horizon::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 0;
+  height: 55%;
+  background:
+    linear-gradient(#5a4030 0 0) 4% 70% / 3px 40% no-repeat,
+    linear-gradient(#5a4030 0 0) 12% 70% / 3px 40% no-repeat,
+    linear-gradient(#5a4030 0 0) 20% 70% / 3px 40% no-repeat,
+    linear-gradient(#5a4030 0 0) 28% 70% / 3px 40% no-repeat,
+    linear-gradient(#8a6040 0 0) 2% 68% / 30% 3px no-repeat,
+    linear-gradient(#6a4858 0 0) 72% 40% / 10% 50% no-repeat,
+    linear-gradient(#7a5868 0 0) 84% 35% / 12% 55% no-repeat,
+    linear-gradient(#5a3848 0 0) 78% 30% / 16% 8px no-repeat;
+  opacity: 0.75;
+}
+
+html[data-theme="firered"] .world__weather {
+  opacity: 0.45;
+  background-image:
+    radial-gradient(circle 2px at 20% 40%, #f06040 0 55%, transparent 60%),
+    radial-gradient(circle 1.5px at 55% 25%, #ffe08a 0 55%, transparent 60%),
+    radial-gradient(circle 2px at 75% 55%, #e85030 0 55%, transparent 60%),
+    radial-gradient(circle 1.5px at 40% 70%, #f0a060 0 55%, transparent 60%);
+  animation: scene-ash-rise 6s steps(8, jump-none) infinite;
+}
+
+html[data-theme="leafgreen"] .world__weather {
+  opacity: 0.5;
+  background-image:
+    radial-gradient(ellipse 4px 2px at 15% 20%, #4ca83b 0 60%, transparent 70%),
+    radial-gradient(ellipse 3px 2px at 45% 10%, #6cc85a 0 60%, transparent 70%),
+    radial-gradient(ellipse 4px 2px at 70% 30%, #3a8828 0 60%, transparent 70%),
+    radial-gradient(ellipse 3px 2px at 88% 15%, #5ab848 0 60%, transparent 70%);
+  animation: scene-leaf-fall 7s steps(8, jump-none) infinite;
+}
+
+html[data-theme="leafgreen"] .world__ambient {
+  background-image:
+    radial-gradient(circle 2px at 12% 35%, #6cc85a 0 60%, transparent 70%),
+    radial-gradient(circle 2px at 40% 50%, #ffe08a 0 60%, transparent 70%),
+    radial-gradient(circle 1.5px at 65% 28%, #4ca83b 0 60%, transparent 70%),
+    radial-gradient(circle 2px at 82% 60%, #8fd3f4 0 60%, transparent 70%),
+    radial-gradient(circle 1.5px at 30% 70%, #6cc85a 0 60%, transparent 70%),
+    radial-gradient(circle 2px at 90% 40%, #ffe08a 0 60%, transparent 70%);
+}
+
+/* Ruby / Omega Ruby — Magma: volcano + ash + heat */
+html[data-theme="ruby"] .world,
+html[data-theme="omegaruby"] .world {
+  background:
+    radial-gradient(
+      ellipse 120px 60px at 72% 28%,
+      #ff6040 0%,
+      #c03020 35%,
+      transparent 70%
+    ),
+    linear-gradient(
+      180deg,
+      #f0a060 0%,
+      #e87840 18%,
+      #c86838 26%,
+      #8a6030 32%,
+      #5a4028 55%,
+      #3a2818 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="ruby"] .world__horizon,
+html[data-theme="omegaruby"] .world__horizon {
+  background: linear-gradient(180deg, #4a2018 0%, #2a100c 100%);
+  clip-path: polygon(
+    0 85%,
+    18% 70%,
+    35% 78%,
+    48% 35%,
+    52% 20%,
+    56% 35%,
+    70% 72%,
+    85% 65%,
+    100% 80%,
+    100% 100%,
+    0 100%
+  );
+  opacity: 1;
+}
+
+html[data-theme="ruby"] .world__horizon::before,
+html[data-theme="omegaruby"] .world__horizon::before {
+  background: radial-gradient(
+    ellipse 40px 28px at 52% 28%,
+    #ff8040 0%,
+    #c04020 40%,
+    transparent 70%
+  );
+  opacity: 0.85;
+}
+
+html[data-theme="ruby"] .world__flora,
+html[data-theme="omegaruby"] .world__flora {
+  opacity: 0;
+}
+
+html[data-theme="ruby"] .world__ground,
+html[data-theme="omegaruby"] .world__ground {
+  background-image:
+    radial-gradient(ellipse 8px 3px at 30% 40%, #3a2010 0 70%, transparent 72%),
+    radial-gradient(ellipse 6px 2px at 70% 60%, #2a180c 0 70%, transparent 72%),
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, #5a3020 40%, transparent) 100%
+    );
+  background-size: 64px 48px, 64px 48px, 100% 100%;
+  opacity: 0.85;
+}
+
+html[data-theme="ruby"] .world__weather,
+html[data-theme="omegaruby"] .world__weather {
+  opacity: 0.55;
+  background-image:
+    radial-gradient(circle 2px at 18% 70%, #6a4030 0 55%, transparent 60%),
+    radial-gradient(circle 1.5px at 42% 80%, #4a2818 0 55%, transparent 60%),
+    radial-gradient(circle 2px at 65% 75%, #8a5040 0 55%, transparent 60%),
+    radial-gradient(circle 1.5px at 88% 85%, #5a3020 0 55%, transparent 60%);
+  animation: scene-ash-rise 5s steps(8, jump-none) infinite;
+}
+
+html[data-theme="ruby"] .world__motif,
+html[data-theme="omegaruby"] .world__motif {
+  opacity: 0.4;
+  background: linear-gradient(
+    180deg,
+    transparent 40%,
+    rgba(255, 120, 60, 0.25) 70%,
+    transparent 100%
+  );
+  animation: scene-heat-shimmer 1.8s steps(4, jump-none) infinite;
+}
+
+html[data-theme="omegaruby"] .world__motif {
+  opacity: 0.55;
+  animation-duration: 1.4s;
+  animation-timing-function: ease-in-out;
+}
+
+/* Sapphire / Alpha Sapphire — Aqua: ocean + rain */
+html[data-theme="sapphire"] .world,
+html[data-theme="alphasapphire"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #6ab0e0 0%,
+      #3a78c8 20%,
+      #1f4fa3 28%,
+      #1a6a88 34%,
+      #0a4868 55%,
+      #062838 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="sapphire"] .world__horizon,
+html[data-theme="alphasapphire"] .world__horizon {
+  top: 26vh;
+  height: 10vh;
+  background: linear-gradient(
+    180deg,
+    #1a6088 0%,
+    #0a3858 60%,
+    #062030 100%
+  );
+  clip-path: polygon(
+    0 60%,
+    8% 55%,
+    16% 62%,
+    28% 50%,
+    40% 58%,
+    55% 48%,
+    70% 56%,
+    85% 50%,
+    100% 58%,
+    100% 100%,
+    0 100%
+  );
+  opacity: 0.95;
+}
+
+html[data-theme="sapphire"] .world__horizon::before,
+html[data-theme="alphasapphire"] .world__horizon::before {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 18px,
+    rgba(255, 255, 255, 0.2) 18px 22px,
+    transparent 22px 40px
+  );
+  opacity: 0.5;
+}
+
+html[data-theme="sapphire"] .world__flora,
+html[data-theme="alphasapphire"] .world__flora {
+  opacity: 0;
+}
+
+html[data-theme="sapphire"] .world__ground,
+html[data-theme="alphasapphire"] .world__ground {
+  background-image:
+    linear-gradient(
+      180deg,
+      #0a5070 0%,
+      #083848 40%,
+      #052028 100%
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 28px,
+      rgba(255, 255, 255, 0.08) 28px 40px,
+      transparent 40px 70px
+    );
+  background-size: 100% 100%, 120px 18px;
+  background-position: 0 0, 0 30%;
+  opacity: 0.9;
+}
+
+html[data-theme="sapphire"] .world__weather,
+html[data-theme="alphasapphire"] .world__weather {
+  opacity: 0.45;
+  background-image:
+    repeating-linear-gradient(
+      105deg,
+      transparent 0 10px,
+      rgba(200, 230, 255, 0.55) 10px 11px,
+      transparent 11px 22px
+    ),
+    repeating-linear-gradient(
+      100deg,
+      transparent 0 14px,
+      rgba(180, 220, 255, 0.4) 14px 15px,
+      transparent 15px 30px
+    ),
+    repeating-linear-gradient(
+      110deg,
+      transparent 0 18px,
+      rgba(220, 240, 255, 0.35) 18px 19px,
+      transparent 19px 36px
+    );
+  animation: scene-rain-fall 0.7s steps(6, jump-none) infinite;
+}
+
+html[data-theme="sapphire"] .world__motif,
+html[data-theme="alphasapphire"] .world__motif {
+  opacity: 0.35;
+  background:
+    radial-gradient(
+      ellipse 80% 30% at 50% 70%,
+      rgba(120, 220, 255, 0.35),
+      transparent 70%
+    );
+  animation: scene-caustic 4s steps(8, jump-none) infinite;
+}
+
+html[data-theme="alphasapphire"] .world__motif {
+  opacity: 0.5;
+  animation-timing-function: ease-in-out;
+}
+
+/* Emerald — sky legend ribbon */
+html[data-theme="emerald"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #7ec8ff 0%,
+      #8fd3f4 16%,
+      #5cbc88 28%,
+      #3a9a60 40%,
+      #1e6a40 70%,
+      #0a4028 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="emerald"] .world__motif {
+  opacity: 0.55;
+  background: none;
+}
+
+html[data-theme="emerald"] .world__motif::before {
+  content: "";
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  top: 12%;
+  height: 18%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(80, 200, 140, 0.55) 20%,
+    rgba(40, 160, 120, 0.7) 45%,
+    rgba(200, 240, 180, 0.45) 70%,
+    transparent 100%
+  );
+  clip-path: polygon(
+    0 60%,
+    12% 40%,
+    28% 55%,
+    42% 25%,
+    58% 50%,
+    72% 20%,
+    88% 45%,
+    100% 35%,
+    100% 75%,
+    82% 70%,
+    65% 85%,
+    48% 60%,
+    30% 80%,
+    15% 65%,
+    0 80%
+  );
+  animation: scene-ribbon-drift 8s steps(10, jump-none) infinite alternate;
+}
+
+html[data-theme="emerald"] .world__weather {
+  opacity: 0.3;
+  background-image:
+    radial-gradient(circle 2px at 25% 20%, #fff 0 50%, transparent 55%),
+    radial-gradient(circle 1.5px at 60% 15%, #ffe08a 0 50%, transparent 55%),
+    radial-gradient(circle 2px at 80% 28%, #fff 0 50%, transparent 55%);
+  animation: scene-sparkle 2.4s steps(4, jump-none) infinite;
+}
+
+/* ── Gen 4 Sinnoh — mythic peaks ─────────────────────────────────── */
+
+html[data-era="gen4-sinnoh"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #b8d0f0 0%,
+      #7aa0d8 18%,
+      #5a78a8 28%,
+      #d8e4f0 32%,
+      #c0d0e0 55%,
+      #8a9ab0 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen4-sinnoh"] .world__horizon {
+  background: linear-gradient(180deg, #e8f0f8 0%, #607888 40%, #304050 100%);
+  clip-path: polygon(
+    0 90%,
+    10% 55%,
+    18% 70%,
+    30% 25%,
+    38% 40%,
+    50% 10%,
+    58% 35%,
+    70% 20%,
+    82% 50%,
+    92% 35%,
+    100% 60%,
+    100% 100%,
+    0 100%
+  );
+  opacity: 1;
+}
+
+html[data-era="gen4-sinnoh"] .world__horizon::before {
+  background:
+    linear-gradient(135deg, transparent 40%, rgba(255, 255, 255, 0.7) 42%, transparent 48%),
+    linear-gradient(225deg, transparent 45%, rgba(255, 255, 255, 0.5) 48%, transparent 55%);
+  opacity: 0.85;
+}
+
+html[data-era="gen4-sinnoh"] .world__flora {
+  opacity: 0.15;
+  background-image:
+    radial-gradient(circle 2px at 20% 40%, #fff 0 55%, transparent 60%),
+    radial-gradient(circle 2px at 60% 55%, #fff 0 55%, transparent 60%);
+  animation: none;
+}
+
+html[data-era="gen4-sinnoh"] .world__flora::before,
+html[data-era="gen4-sinnoh"] .world__flora::after {
+  display: none;
+}
+
+html[data-era="gen4-sinnoh"] .world__ground {
+  background-image:
+    radial-gradient(ellipse 10px 4px at 25% 40%, #a8b8c8 0 70%, transparent 72%),
+    radial-gradient(ellipse 8px 3px at 70% 55%, #90a0b0 0 70%, transparent 72%),
+    linear-gradient(180deg, #d0dce8 0%, #a0b0c0 100%);
+  background-size: 56px 40px, 56px 40px, 100% 100%;
+  opacity: 0.85;
+}
+
+html[data-era="gen4-sinnoh"] .world__weather {
+  opacity: 0.55;
+  background-image:
+    radial-gradient(circle at 12% 18%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 38% 8%, #fff 1.5px, transparent 2.5px),
+    radial-gradient(circle at 62% 22%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 84% 12%, #fff 1.5px, transparent 2.5px),
+    radial-gradient(circle at 22% 42%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 70% 48%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 48% 30%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 90% 55%, #fff 1.5px, transparent 2.5px);
+  animation: scene-snow-drift 4s steps(8, jump-none) infinite;
+}
+
+html[data-theme="pearl"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #f0d0e0 0%,
+      #e8b4c8 18%,
+      #c888a0 28%,
+      #f8e8f0 34%,
+      #e0c8d4 60%,
+      #a88898 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="platinum"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #2a2040 0%,
+      #484858 16%,
+      #6a6080 26%,
+      #3a3050 40%,
+      #1a1828 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="platinum"] .world__motif {
+  opacity: 0.45;
+  background-image:
+    linear-gradient(
+      12deg,
+      transparent 0 40%,
+      rgba(160, 120, 220, 0.25) 40% 42%,
+      transparent 42% 100%
+    ),
+    linear-gradient(
+      -18deg,
+      transparent 0 55%,
+      rgba(120, 80, 180, 0.2) 55% 57%,
+      transparent 57% 100%
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 14px,
+      rgba(180, 160, 255, 0.12) 14px 15px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 18px,
+      rgba(180, 160, 255, 0.1) 18px 19px
+    );
+  transform: perspective(400px) rotateX(8deg);
+  transform-origin: center 40%;
+}
+
+html[data-theme="platinum"] .world__flora {
+  opacity: 0;
+}
+
+html[data-theme="platinum"] .world__weather {
+  opacity: 0.35;
+  filter: hue-rotate(40deg);
+}
+
+/* BDSP — cavern gleam under Sinnoh remake */
+html[data-theme="brilliantdiamond"] .world__ground,
+html[data-theme="shiningpearl"] .world__ground {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(160, 220, 255, 0.35) 0 2px, transparent 3px),
+    radial-gradient(circle at 55% 60%, rgba(255, 220, 160, 0.3) 0 2px, transparent 3px),
+    radial-gradient(circle at 80% 40%, rgba(180, 200, 255, 0.28) 0 2px, transparent 3px),
+    linear-gradient(180deg, #2a3040 0%, #1a2030 50%, #0e1420 100%);
+  background-size: 80px 60px, 90px 70px, 70px 50px, 100% 100%;
+  opacity: 0.9;
+}
+
+html[data-theme="brilliantdiamond"] .world__motif,
+html[data-theme="shiningpearl"] .world__motif {
+  opacity: 0.35;
+  background: radial-gradient(
+    ellipse 50% 40% at 50% 80%,
+    rgba(120, 200, 255, 0.35),
+    transparent 70%
+  );
+}
+
+/* ── Gen 4 Johto — time / towers ─────────────────────────────────── */
+
+html[data-era="gen4-johto"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #f0c878 0%,
+      #e8a858 16%,
+      #c87840 24%,
+      #6a9048 32%,
+      #4a7030 60%,
+      #2a4820 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen4-johto"] .world__horizon {
+  background: linear-gradient(180deg, #3a5040 0%, #1a2818 100%);
+  clip-path: polygon(
+    0 75%,
+    15% 65%,
+    28% 70%,
+    40% 55%,
+    48% 20%,
+    50% 8%,
+    52% 20%,
+    58% 55%,
+    72% 62%,
+    88% 58%,
+    100% 70%,
+    100% 100%,
+    0 100%
+  );
+}
+
+html[data-era="gen4-johto"] .world__horizon::before {
+  background:
+    linear-gradient(#2a3830 0 0) 49% 0 / 8px 55% no-repeat,
+    linear-gradient(#3a4840 0 0) 47% 50% / 14px 8px no-repeat,
+    linear-gradient(#3a4840 0 0) 47% 62% / 18px 8px no-repeat,
+    linear-gradient(#2a3830 0 0) 46% 70% / 22px 30% no-repeat;
+  opacity: 0.95;
+}
+
+html[data-era="gen4-johto"] .world__weather {
+  opacity: 0.55;
+  background-image:
+    radial-gradient(ellipse 5px 3px at 18% 15%, #d06030 0 60%, transparent 70%),
+    radial-gradient(ellipse 4px 2px at 40% 8%, #e08040 0 60%, transparent 70%),
+    radial-gradient(ellipse 5px 3px at 65% 20%, #c05028 0 60%, transparent 70%),
+    radial-gradient(ellipse 4px 2px at 85% 12%, #e8a050 0 60%, transparent 70%);
+  animation: scene-leaf-fall 6s steps(8, jump-none) infinite;
+}
+
+html[data-theme="soulsilver"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #c8d8e8 0%,
+      #a0b8c8 16%,
+      #7890a0 26%,
+      #688878 34%,
+      #406058 60%,
+      #284038 100%
+    );
+  background-attachment: fixed;
+}
+
+/* Local time tint for Johto */
+html[data-era="gen4-johto"] .world__motif {
+  opacity: 0.2;
+  background: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  html[data-era="gen4-johto"] .world__motif {
+    opacity: 0.35;
+    background: linear-gradient(
+      180deg,
+      rgba(20, 30, 60, 0.45) 0%,
+      transparent 50%
+    );
+  }
+}
+
+/* ── Gen 5 — Unova city / ideals ─────────────────────────────────── */
+
+html[data-era="gen5"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #4a6088 0%,
+      #2a3858 22%,
+      #1a2030 30%,
+      #3a4858 36%,
+      #2a3038 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen5"] .world__sky::before,
+html[data-era="gen5"] .world__sky::after {
+  opacity: 0.25;
+}
+
+html[data-era="gen5"] .world__horizon {
+  top: 18vh;
+  height: 18vh;
+  background: linear-gradient(180deg, #1c1c22 0%, #0e0e14 100%);
+  clip-path: polygon(
+    0 70%,
+    0 45%,
+    4% 45%,
+    4% 30%,
+    10% 30%,
+    10% 48%,
+    16% 48%,
+    16% 22%,
+    22% 22%,
+    22% 40%,
+    30% 40%,
+    30% 18%,
+    38% 18%,
+    38% 42%,
+    46% 42%,
+    46% 28%,
+    54% 28%,
+    54% 50%,
+    62% 50%,
+    62% 20%,
+    70% 20%,
+    70% 38%,
+    78% 38%,
+    78% 15%,
+    86% 15%,
+    86% 44%,
+    94% 44%,
+    94% 32%,
+    100% 32%,
+    100% 70%,
+    100% 100%,
+    0 100%
+  );
+  opacity: 0.95;
+}
+
+html[data-era="gen5"] .world__horizon::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(80, 100, 140, 0.5) 20%,
+    rgba(80, 100, 140, 0.5) 80%,
+    transparent 100%
+  );
+  clip-path: polygon(8% 62%, 92% 62%, 95% 68%, 5% 68%);
+  opacity: 0.8;
+}
+
+html[data-era="gen5"] .world__flora {
+  opacity: 0;
+}
+
+html[data-era="gen5"] .world__ground {
+  background-image:
+    linear-gradient(90deg, #3a4048 0 1px, transparent 1px),
+    linear-gradient(#3a4048 0 1px, transparent 1px),
+    linear-gradient(180deg, #2a3038 0%, #1a1e24 100%);
+  background-size: 32px 32px, 32px 32px, 100% 100%;
+  opacity: 0.9;
+}
+
+html[data-era="gen5"] .world__motif {
+  opacity: 0.4;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-ink) 0 10px,
+    transparent 10px 14px,
+    var(--color-ink) 14px 22px,
+    transparent 22px 28px,
+    var(--color-ink) 28px 34px,
+    transparent 34px 42px
+  );
+  background-position: 0 22%;
+  background-size: 100% 10%;
+  background-repeat: no-repeat;
+  clip-path: polygon(
+    0 28%,
+    0 22%,
+    4% 22%,
+    4% 16%,
+    10% 16%,
+    10% 24%,
+    16% 24%,
+    16% 18%,
+    24% 18%,
+    24% 21%,
+    32% 21%,
+    32% 14%,
+    40% 14%,
+    40% 23%,
+    48% 23%,
+    48% 19%,
+    56% 19%,
+    56% 25%,
+    64% 25%,
+    64% 16%,
+    72% 16%,
+    72% 22%,
+    80% 22%,
+    80% 15%,
+    88% 15%,
+    88% 23%,
+    100% 23%,
+    100% 28%
+  );
+}
+
+html[data-theme="black"] .world,
+html[data-theme="black2"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #0e1020 0%,
+      #1a1c28 20%,
+      #12141c 32%,
+      #1c1c22 40%,
+      #0a0a10 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="black"] .world__weather,
+html[data-theme="black2"] .world__weather {
+  opacity: 0.5;
+  background-image:
+    radial-gradient(circle 3px at 22% 25%, #e5483b 0 50%, transparent 55%),
+    radial-gradient(circle 2px at 68% 20%, #4a80ff 0 50%, transparent 55%),
+    radial-gradient(circle 2px at 85% 32%, #e5483b 0 50%, transparent 55%);
+  animation: scene-neon-flicker 2.8s steps(4, jump-none) infinite;
+}
+
+html[data-theme="white"] .world,
+html[data-theme="white2"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #d8e4f0 0%,
+      #f2f4f8 18%,
+      #c8d0d8 30%,
+      #e8ecef 38%,
+      #b8c0c8 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="white"] .world__weather,
+html[data-theme="white2"] .world__weather {
+  opacity: 0.35;
+  background-image:
+    linear-gradient(
+      100deg,
+      transparent 0 40%,
+      rgba(255, 255, 255, 0.4) 40% 42%,
+      transparent 42% 100%
+    ),
+    linear-gradient(
+      85deg,
+      transparent 0 60%,
+      rgba(255, 255, 255, 0.25) 60% 61%,
+      transparent 61% 100%
+    );
+  animation: scene-mote-drift 3s steps(6, jump-none) infinite;
+}
+
+html[data-theme="white2"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #f0d0a0 0%,
+      #f8e8d0 16%,
+      #e0c8a8 28%,
+      #f2f4f8 36%,
+      #d0d4d8 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="black2"] .world__weather {
+  background-image:
+    radial-gradient(circle 3px at 22% 25%, #80c8ff 0 50%, transparent 55%),
+    radial-gradient(circle 2px at 68% 20%, #e5483b 0 50%, transparent 55%),
+    radial-gradient(circle 2px at 85% 32%, #80c8ff 0 50%, transparent 55%);
+}
+
+/* ── Gen 6 Kalos — elegance / mega sparkle ───────────────────────── */
+
+html[data-era="gen6-kalos"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #b8d0f8 0%,
+      #e8f0ff 18%,
+      #d0dce8 28%,
+      #c8d0a8 36%,
+      #a8b888 70%,
+      #889868 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen6-kalos"] .world__horizon {
+  background: linear-gradient(180deg, #8a9088 0%, #5a6058 100%);
+  clip-path: polygon(
+    0 80%,
+    12% 70%,
+    22% 75%,
+    35% 60%,
+    50% 68%,
+    65% 55%,
+    78% 70%,
+    90% 62%,
+    100% 75%,
+    100% 100%,
+    0 100%
+  );
+  border-radius: 0;
+}
+
+html[data-era="gen6-kalos"] .world__motif {
+  opacity: 0.35;
+  background: radial-gradient(
+    ellipse 80% 40% at 50% 18%,
+    rgba(255, 255, 255, 0.65),
+    transparent 70%
+  );
+}
+
+html[data-era="gen6-kalos"] .world__motif::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 8%;
+  height: 22%;
+  border: 2px solid rgba(212, 175, 55, 0.35);
+  border-radius: 50% 50% 40% 40%;
+  border-bottom: none;
+  opacity: 0.7;
+}
+
+html[data-era="gen6-kalos"] .world__weather {
+  opacity: 0.4;
+  background-image:
+    radial-gradient(circle 2px at 25% 30%, #ffe08a 0 50%, transparent 55%),
+    radial-gradient(circle 1.5px at 55% 18%, #fff 0 50%, transparent 55%),
+    radial-gradient(circle 2px at 78% 35%, #d4af37 0 50%, transparent 55%),
+    radial-gradient(circle 1.5px at 40% 45%, #fff 0 50%, transparent 55%);
+  animation: scene-sparkle 1.8s ease-in-out infinite;
+}
+
+html[data-theme="y"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #f0c0c8 0%,
+      #f8e0e4 16%,
+      #e8b0b8 26%,
+      #d8c8a8 36%,
+      #b8a888 70%,
+      #988868 100%
+    );
+  background-attachment: fixed;
+}
+
+/* Gen 6 Hoenn remakes reuse Ruby/Sapphire theme rules above */
+
+/* ── Gen 7 Alola — islands / ultra ───────────────────────────────── */
+
+html[data-era="gen7-alola"] .world__horizon {
+  background: linear-gradient(180deg, #2a6038 0%, #1a4028 100%);
+  clip-path: polygon(
+    0 70%,
+    8% 55%,
+    14% 62%,
+    22% 40%,
+    28% 50%,
+    38% 35%,
+    48% 55%,
+    60% 42%,
+    72% 58%,
+    82% 38%,
+    90% 52%,
+    100% 45%,
+    100% 100%,
+    0 100%
+  );
+}
+
+html[data-era="gen7-alola"] .world__horizon::before {
+  background:
+    radial-gradient(ellipse 14px 28px at 22% 55%, #1a4828 0 70%, transparent 72%),
+    radial-gradient(ellipse 10px 22px at 24% 48%, #0e3020 0 70%, transparent 72%),
+    radial-gradient(ellipse 16px 30px at 78% 50%, #1a4828 0 70%, transparent 72%),
+    radial-gradient(ellipse 11px 24px at 80% 42%, #0e3020 0 70%, transparent 72%);
+  opacity: 0.95;
+}
+
+html[data-era="gen7-alola"] .world__flora {
+  opacity: 0.35;
+  background-image:
+    radial-gradient(circle 3px at 15% 30%, #f06070 0 55%, transparent 60%),
+    radial-gradient(circle 2px at 40% 50%, #ffe08a 0 55%, transparent 60%),
+    radial-gradient(circle 3px at 70% 35%, #f8a0c0 0 55%, transparent 60%);
+}
+
+html[data-theme="sun"] .world,
+html[data-theme="ultrasun"] .world {
+  background:
+    radial-gradient(circle 90px at 80% 12%, #fff6c0 0 30%, #ffd060 45%, transparent 70%),
+    linear-gradient(
+      180deg,
+      #ffd090 0%,
+      #f87840 20%,
+      #e86830 28%,
+      #40a878 36%,
+      #2a8058 70%,
+      #1a6040 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="moon"] .world,
+html[data-theme="ultramoon"] .world {
+  background:
+    radial-gradient(circle 50px at 78% 14%, #f0f4ff 0 40%, #c8d0ff 55%, transparent 70%),
+    linear-gradient(
+      180deg,
+      #1a1848 0%,
+      #3a3080 20%,
+      #2a2860 30%,
+      #1a4838 40%,
+      #0e3028 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="moon"] .world__weather,
+html[data-theme="ultramoon"] .world__weather,
+html[data-era="gen7-alola"] .world__ambient {
+  opacity: 0.55;
+  background-image:
+    radial-gradient(circle at 15% 12%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 42% 8%, #fff 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 18%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 88% 10%, #ffe8a0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 55% 28%, #fff 1px, transparent 2px),
+    radial-gradient(circle at 30% 22%, #fff 1px, transparent 2px);
+}
+
+html[data-theme="sun"] .world__weather,
+html[data-theme="ultrasun"] .world__weather {
+  opacity: 0.3;
+  background: radial-gradient(
+    ellipse 60% 20% at 50% 35%,
+    rgba(255, 200, 100, 0.35),
+    transparent 70%
+  );
+}
+
+html[data-theme="ultrasun"] .world__motif,
+html[data-theme="ultramoon"] .world__motif {
+  opacity: 0.55;
+}
+
+html[data-theme="ultrasun"] .world__motif::before,
+html[data-theme="ultramoon"] .world__motif::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  width: 120px;
+  height: 120px;
+  margin-left: -60px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #ff80c0;
+  border-right-color: #80e0ff;
+  border-bottom-color: #c080ff;
+  border-left-color: #ffe080;
+  box-shadow:
+    0 0 0 8px rgba(255, 128, 200, 0.15),
+    inset 0 0 20px rgba(128, 200, 255, 0.25);
+  animation: scene-wormhole-pulse 3.2s ease-in-out infinite;
+}
+
+html[data-theme="ultrasun"] .world__motif::after,
+html[data-theme="ultramoon"] .world__motif::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 26%;
+  width: 56px;
+  height: 56px;
+  margin-left: -28px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(160, 100, 255, 0.35) 40%,
+    transparent 70%
+  );
+  animation: scene-wormhole-pulse 2.4s ease-in-out infinite reverse;
+}
+
+/* ── Gen 8 Galar — stadium / countryside ─────────────────────────── */
+
+html[data-era="gen8-galar"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #6a90c8 0%,
+      #a8c8e8 16%,
+      #88b070 28%,
+      #5a8848 40%,
+      #3a6030 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen8-galar"] .world__horizon {
+  background: linear-gradient(180deg, #4a6840 0%, #2a4028 100%);
+  clip-path: polygon(
+    0 80%,
+    10% 70%,
+    25% 75%,
+    40% 60%,
+    55% 72%,
+    70% 58%,
+    85% 70%,
+    100% 65%,
+    100% 100%,
+    0 100%
+  );
+}
+
+html[data-era="gen8-galar"] .world__motif {
+  opacity: 0.55;
+}
+
+html[data-era="gen8-galar"] .world__motif::before,
+html[data-era="gen8-galar"] .world__motif::after {
+  content: "";
+  position: absolute;
+  top: 10%;
+  width: 10px;
+  height: 28%;
+  background: linear-gradient(
+    180deg,
+    #e8e8f0 0 8%,
+    #4a4a58 8% 100%
+  );
+  box-shadow: 0 0 12px 2px rgba(255, 240, 180, 0.45);
+}
+
+html[data-era="gen8-galar"] .world__motif::before {
+  left: 18%;
+}
+
+html[data-era="gen8-galar"] .world__motif::after {
+  right: 18%;
+}
+
+html[data-era="gen8-galar"] .world__weather {
+  opacity: 0.55;
+  background-image:
+    linear-gradient(180deg, #2956c7, #2956c7),
+    linear-gradient(180deg, #b52a5b, #b52a5b),
+    linear-gradient(180deg, #d4af37, #d4af37);
+  background-size: 28px 10px, 28px 10px, 22px 8px;
+  background-position: 22% 8%, 70% 10%, 45% 6%;
+  background-repeat: no-repeat;
+}
+
+html[data-theme="shield"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #8860a0 0%,
+      #c890b0 16%,
+      #88b070 28%,
+      #5a8848 40%,
+      #3a6030 100%
+    );
+  background-attachment: fixed;
+}
+
+/* ── Gen 8 Hisui — frontier survey ───────────────────────────────── */
+
+html[data-era="gen8-hisui"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #d8c8a0 0%,
+      #e8dcc0 14%,
+      #c0b088 26%,
+      #6a8048 36%,
+      #4a6030 70%,
+      #2a3818 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen8-hisui"] .world__horizon {
+  background: linear-gradient(180deg, #5a4a30 0%, #3a2a18 100%);
+  clip-path: polygon(
+    0 85%,
+    12% 60%,
+    25% 70%,
+    40% 40%,
+    55% 55%,
+    70% 30%,
+    85% 50%,
+    100% 45%,
+    100% 100%,
+    0 100%
+  );
+}
+
+html[data-era="gen8-hisui"] .world__ground {
+  opacity: 0.55;
+  background-image: repeating-linear-gradient(
+    -12deg,
+    transparent 0 6px,
+    rgba(90, 70, 40, 0.18) 6px 7px
+  );
+  background-size: auto;
+}
+
+html[data-era="gen8-hisui"] .world__flora {
+  opacity: 0.7;
+}
+
+html[data-era="gen8-hisui"] .world__flora::before,
+html[data-era="gen8-hisui"] .world__flora::after {
+  height: 48px;
+  opacity: 0.7;
+}
+
+html[data-era="gen8-hisui"] .world__motif {
+  opacity: 0.2;
+  background: radial-gradient(
+    ellipse 70% 30% at 50% 20%,
+    rgba(232, 220, 192, 0.5),
+    transparent 70%
+  );
+}
+
+/* ── Gen 9 Paldea — academy / Area Zero ──────────────────────────── */
+
+html[data-era="gen9-paldea"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #f0c878 0%,
+      #f8e0a8 14%,
+      #e8a868 24%,
+      #c88858 32%,
+      #88a868 42%,
+      #508048 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-era="gen9-paldea"] .world__horizon {
+  background: linear-gradient(180deg, #a07050 0%, #684030 100%);
+  clip-path: polygon(
+    0 75%,
+    15% 65%,
+    30% 70%,
+    45% 55%,
+    60% 68%,
+    75% 50%,
+    90% 62%,
+    100% 58%,
+    100% 100%,
+    0 100%
+  );
+  border-radius: 0 0 40% 40%;
+}
+
+html[data-era="gen9-paldea"] .world__ground {
+  opacity: 0.45;
+  background-image:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.08) 0 1px, transparent 1px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #e8d0a0 60%, transparent),
+      color-mix(in srgb, #c8a878 40%, transparent)
+    );
+  background-size: 24px 24px, 24px 24px, 100% 100%;
+}
+
+html[data-era="gen9-paldea"] .world__flora {
+  opacity: 0.25;
+}
+
+html[data-theme="scarlet"] .world__motif {
+  opacity: 0.45;
+  background:
+    radial-gradient(
+      ellipse 40% 25% at 50% 85%,
+      rgba(232, 71, 47, 0.45),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 50% 88%,
+      rgba(40, 20, 10, 0.5) 0 8%,
+      transparent 20%
+    );
+}
+
+html[data-theme="violet"] .world {
+  background:
+    linear-gradient(
+      180deg,
+      #4a3080 0%,
+      #7b4bc4 16%,
+      #a080d0 26%,
+      #685888 34%,
+      #486858 50%,
+      #305040 100%
+    );
+  background-attachment: fixed;
+}
+
+html[data-theme="violet"] .world__motif {
+  opacity: 0.5;
+  background:
+    radial-gradient(
+      ellipse 40% 25% at 50% 85%,
+      rgba(123, 75, 196, 0.55),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle at 50% 88%,
+      rgba(20, 10, 40, 0.55) 0 8%,
+      transparent 20%
+    );
+}
+
+html[data-theme="violet"] .world__weather {
+  opacity: 0.3;
+  background-image:
+    radial-gradient(circle 2px at 30% 20%, #c8a0ff 0 50%, transparent 55%),
+    radial-gradient(circle 1.5px at 70% 15%, #ffe08a 0 50%, transparent 55%);
+  animation: scene-sparkle 2.2s ease-in-out infinite;
+}
+
+/* ── Platform motion dial overrides ──────────────────────────────── */
+
+html[data-platform="3ds"] .world__weather,
+html[data-platform="switch"] .world__weather,
+html[data-platform="3ds"] .world__motif::before,
+html[data-platform="switch"] .world__motif::before {
+  animation-timing-function: ease-in-out;
+}
+
+html[data-platform="gba"] .world__sky::before,
+html[data-platform="gba"] .world__sky::after,
+html[data-platform="ds"] .world__sky::before,
+html[data-platform="ds"] .world__sky::after {
+  animation-timing-function: steps(12, jump-none);
+}

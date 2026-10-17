@@ -1,5 +1,5 @@
 import { SlotDetail } from "@/components/SlotDetail";
-import { getSlot, listVersions } from "@/lib/vault";
+import { getSlot, getSlotSnapshot, listVersions } from "@/lib/vault";
 import type { DetectionResult } from "@poketag/save-format";
 import { notFound } from "next/navigation";
 
@@ -21,6 +21,8 @@ export default async function SlotPage({
   const { slotId } = await params;
   const slot = getSlot(slotId);
   if (!slot) notFound();
+
+  const snapshot = getSlotSnapshot(slotId);
 
   const versions = listVersions(slotId).map((v) => {
     const detection = parseDetection(v.detection_json);
@@ -55,8 +57,11 @@ export default async function SlotPage({
           createdAt: slot.createdAt,
           recognized: slot.recognized,
           currentVersionId: slot.currentVersionId,
+          parseStatus: slot.parseStatus,
+          parseError: slot.parseError,
         }}
         versions={versions}
+        snapshot={snapshot}
       />
     </main>
   );

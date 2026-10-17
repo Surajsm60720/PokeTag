@@ -147,3 +147,41 @@ export function cartForm(
   }
   return "gba";
 }
+
+export interface DocumentThemeState {
+  theme: string;
+  era: string;
+  platform: string;
+}
+
+/** Snapshot current `<html>` theme datasets. */
+export function readDocumentTheme(): DocumentThemeState {
+  const root = document.documentElement;
+  return {
+    theme: root.dataset.theme || DEFAULT_THEME,
+    era: root.dataset.era || "gen3",
+    platform: root.dataset.platform || "gba",
+  };
+}
+
+/** Apply a game theme to `<html>` for scene + UI tokens. */
+export function applyThemeToDocument(
+  gameVersion: string | null | undefined
+): DocumentThemeState {
+  const theme = resolveTheme(gameVersion);
+  const resolved = theme === "unknown" ? DEFAULT_THEME : theme;
+  const root = document.documentElement;
+  const prev = readDocumentTheme();
+  root.dataset.theme = resolved;
+  root.dataset.era = themeEra(resolved);
+  root.dataset.platform = themePlatform(resolved);
+  return prev;
+}
+
+/** Restore a previously snapshotted document theme. */
+export function restoreDocumentTheme(state: DocumentThemeState): void {
+  const root = document.documentElement;
+  root.dataset.theme = state.theme || DEFAULT_THEME;
+  root.dataset.era = state.era || "gen3";
+  root.dataset.platform = state.platform || "gba";
+}

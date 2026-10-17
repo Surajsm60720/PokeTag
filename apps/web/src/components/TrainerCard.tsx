@@ -9,6 +9,12 @@ import {
   platformForGame,
   platformLabel,
 } from "@/lib/format";
+import {
+  formatMoney,
+  formatPlayTime,
+  type ParsedSnapshot,
+} from "@/lib/parsed";
+import { BadgeCase } from "./BadgeCase";
 import { PixelPanel } from "./PixelPanel";
 
 export interface TrainerCardVersion {
@@ -39,18 +45,20 @@ export interface TrainerCardSlot {
   recognized: boolean;
 }
 
-type Face = "status" | "file";
+type Face = "trainer" | "file";
 
 export function TrainerCard({
   slot,
   current,
   versionCount,
+  snapshot,
 }: {
   slot: TrainerCardSlot;
   current: TrainerCardVersion | null;
   versionCount: number;
+  snapshot: ParsedSnapshot | null;
 }) {
-  const [face, setFace] = useState<Face>("status");
+  const [face, setFace] = useState<Face>("trainer");
   const platform = platformForGame(slot.gameVersion);
   const title = slot.runLabel || slot.label;
   const gameName = gameDisplayName(slot.gameVersion, slot.label);
@@ -58,6 +66,7 @@ export function TrainerCard({
   const integrity = current
     ? "Original bytes vaulted (immutable)"
     : "No version on file";
+  const earned = snapshot?.badges.filter((b) => b.earned).length ?? 0;
 
   async function copyHash() {
     if (!current?.sha256) return;
@@ -76,11 +85,11 @@ export function TrainerCard({
           <button
             type="button"
             role="tab"
-            aria-selected={face === "status"}
-            data-active={face === "status"}
-            onClick={() => setFace("status")}
+            aria-selected={face === "trainer"}
+            data-active={face === "trainer"}
+            onClick={() => setFace("trainer")}
           >
-            Status
+            Trainer
           </button>
           <button
             type="button"
@@ -94,14 +103,13 @@ export function TrainerCard({
         </span>
       </div>
 
-      <h2 className="trainer-card__title">{title}</h2>
+      <h2 className="trainer-card__title">
+        {snapshot?.trainer.name || title}
+      </h2>
       <p className="trainer-card__game">{gameName}</p>
 
       <div className="trainer-card__badges" aria-label="Save status">
-        <span
-          className="status-chip"
-          data-tone={statusOk ? "ok" : "warn"}
-        >
+        <span className="status-chip" data-tone={statusOk ? "ok" : "warn"}>
           {statusOk ? "RECOGNIZED" : "UNRECOGNIZED"}
         </span>
         <span className="status-chip" data-tone="info">
@@ -110,72 +118,129 @@ export function TrainerCard({
         <span className="status-chip" data-tone="info">
           {platformLabel(platform).toUpperCase()}
         </span>
+        {snapshot ? (
+          <span className="status-chip" data-tone="ok">
+            {snapshot.isDemo ? "DEMO DATA" : "PARSED"}
+          </span>
+        ) : (
+          <span className="status-chip" data-tone="neutral">
+            UNPARSED
+          </span>
+        )}
         <span className="status-chip" data-tone="neutral">
           {versionCount} VER{versionCount === 1 ? "" : "S"}
         </span>
-        {current?.isCurrent ? (
-          <span className="status-chip" data-tone="ok">
-            CURRENT
-          </span>
-        ) : null}
       </div>
 
-      {face === "status" ? (
-        <dl className="detail-grid">
-          <div>
-            <dt>Run started</dt>
-            <dd>{formatWhen(slot.createdAt)}</dd>
-          </div>
-          <div>
-            <dt>Last upload</dt>
-            <dd>{formatWhen(current?.uploadedAt)}</dd>
-          </div>
-          <div>
-            <dt>Hardware</dt>
-            <dd>{platformLabel(platform)}</dd>
-          </div>
-          <div>
-            <dt>Detected as</dt>
-            <dd>{current?.detectionLabel || gameName}</dd>
-          </div>
-          <div>
-            <dt>Device</dt>
-            <dd>{current?.sourceDevice || "— not labeled —"}</dd>
-          </div>
-          <div>
-            <dt>Emulator</dt>
-            <dd>{current?.sourceEmulator || "— not labeled —"}</dd>
-          </div>
-          <div className="detail-grid__wide">
-            <dt>Integrity</dt>
-            <dd>{integrity}</dd>
-          </div>
-          <div className="detail-grid__wide">
-            <dt>Parsed dashboard</dt>
-            <dd className="muted">
-              Party, badges, play time and location unlock in Phase 2 (read-only
-              save parsing). File vault details are live now.
-            </dd>
-          </div>
-          {current?.detectionNotes?.length ? (
+      {face === "trainer" ? (
+        snapshot ? (
+          <>
+            <dl className="detail-grid">
+              <div>
+                <dt>Trainer ID</dt>
+                <dd className="mono-wrap">
+                  {String(snapshot.trainer.trainerId).padStart(5, "0")}
+                </dd>
+              </div>
+              <div>
+                <dt>Secret ID</dt>
+                <dd className="mono-wrap">
+                  {String(snapshot.trainer.secretId).padStart(5, "0")}
+                </dd>
+              </div>
+              <div>
+                <dt>Play time</dt>
+                <dd>{formatPlayTime(snapshot.playTimeSeconds)}</dd>
+              </div>
+              <div>
+                <dt>Money</dt>
+                <dd>{formatMoney(snapshot.trainer.money)}</dd>
+              </div>
+              <div>
+                <dt>Location</dt>
+                <dd>{snapshot.location}</dd>
+              </div>
+              <div>
+                <dt>Badges</dt>
+                <dd>
+                  {earned}/{snapshot.badges.length}
+                </dd>
+              </div>
+              <div>
+                <dt>Pokédex</dt>
+                <dd>
+                  {snapshot.dex.owned} owned · {snapshot.dex.seen} seen
+                </dd>
+              </div>
+              <div>
+                <dt>Elite Four</dt>
+                <dd>
+                  {snapshot.progress?.eliteFourDefeated == null
+                    ? "—"
+                    : snapshot.progress.eliteFourDefeated
+                      ? "Defeated"
+                      : "Not yet"}
+                </dd>
+              </div>
+              <div>
+                <dt>Champion</dt>
+                <dd>
+                  {snapshot.progress?.championDefeated == null
+                    ? "—"
+                    : snapshot.progress.championDefeated
+                      ? "Defeated"
+                      : "Not yet"}
+                </dd>
+              </div>
+              <div>
+                <dt>Device</dt>
+                <dd>{current?.sourceDevice || "— not labeled —"}</dd>
+              </div>
+              <div>
+                <dt>Emulator</dt>
+                <dd>{current?.sourceEmulator || "— not labeled —"}</dd>
+              </div>
+              {snapshot.progress?.note ? (
+                <div className="detail-grid__wide">
+                  <dt>Progress note</dt>
+                  <dd>{snapshot.progress.note}</dd>
+                </div>
+              ) : null}
+            </dl>
+            <div className="trainer-card__badge-case">
+              <h3 className="section-head">BADGE CASE</h3>
+              <BadgeCase badges={snapshot.badges} />
+            </div>
+            {snapshot.isDemo ? (
+              <p className="muted trainer-card__demo-note">
+                Demo dashboard data for visual review. Real PKHeX parsing comes
+                next — stored bytes stay untouched.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          <dl className="detail-grid">
+            <div>
+              <dt>Run started</dt>
+              <dd>{formatWhen(slot.createdAt)}</dd>
+            </div>
+            <div>
+              <dt>Last upload</dt>
+              <dd>{formatWhen(current?.uploadedAt)}</dd>
+            </div>
             <div className="detail-grid__wide">
-              <dt>Detection notes</dt>
-              <dd>
-                <ul className="note-list">
-                  {current.detectionNotes.map((n) => (
-                    <li key={n}>{n}</li>
-                  ))}
-                </ul>
+              <dt>Parsed dashboard</dt>
+              <dd className="muted">
+                No snapshot for this version yet. Demo slots show sample trainer
+                data; real uploads unlock after the parser lands.
               </dd>
             </div>
-          ) : null}
-          {current?.note ? (
             <div className="detail-grid__wide">
-              <dt>Version note</dt>
-              <dd>{current.note}</dd>
+              <dt>Integrity</dt>
+              <dd>{integrity}</dd>
             </div>
-          ) : null}
-        </dl>
+          </dl>
+        )
       ) : (
         <dl className="detail-grid">
           <div className="detail-grid__wide">

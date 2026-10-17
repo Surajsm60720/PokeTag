@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { PathHints } from "@/components/PathHints";
 import { PokeBallMark } from "@/components/PixelMark";
 import { StartMenu } from "@/components/StartMenu";
 import { fontVariables } from "./fonts";
 import "../styles/themes.css";
 import "./globals.css";
+import "../styles/scenes.css";
 
 export const metadata: Metadata = {
   title: "PokéTag",
@@ -31,7 +31,11 @@ export default function RootLayout({
       <body>
         <div className="world">
           <div className="world__sky" aria-hidden />
+          <div className="world__horizon" aria-hidden />
+          <div className="world__motif" aria-hidden />
           <div className="world__ground" aria-hidden />
+          <div className="world__flora" aria-hidden />
+          <div className="world__weather" aria-hidden />
           <div className="world__ambient" aria-hidden />
           <div className="world__scanlines" aria-hidden />
 
@@ -54,7 +58,6 @@ export default function RootLayout({
 
             <aside className="app-side dual-screen__tools">
               <StartMenu />
-              <PathHints />
             </aside>
           </div>
         </div>

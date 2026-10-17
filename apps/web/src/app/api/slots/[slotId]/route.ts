@@ -1,4 +1,9 @@
-import { getSlot, listVersions } from "@/lib/vault";
+import {
+  deleteSlot,
+  getSlot,
+  getSlotSnapshot,
+  listVersions,
+} from "@/lib/vault";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -13,6 +18,7 @@ export async function GET(
     if (!slot) {
       return NextResponse.json({ error: "Slot not found." }, { status: 404 });
     }
+    const snapshot = getSlotSnapshot(slotId);
     const versions = listVersions(slotId).map((v) => ({
       id: v.id,
       slotId: v.slot_id,
@@ -27,11 +33,34 @@ export async function GET(
       note: v.note,
       recognized: Boolean(v.recognized),
       detection: JSON.parse(v.detection_json || "{}"),
+      parseStatus: v.parse_status,
+      parseError: v.parse_error,
+      parsedAt: v.parsed_at,
       isCurrent: v.id === slot.currentVersionId,
     }));
-    return NextResponse.json({ slot, versions });
+    return NextResponse.json({
+      slot,
+      versions,
+      snapshot,
+      parseStatus: slot.parseStatus,
+      parseError: slot.parseError,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to load slot";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ slotId: string }> }
+) {
+  try {
+    const { slotId } = await context.params;
+    await deleteSlot(slotId);
+    return NextResponse.json({ ok: true, message: "Run deleted." });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Delete failed";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

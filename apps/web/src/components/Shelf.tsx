@@ -1,31 +1,41 @@
 import Link from "next/link";
+import { sortByReleaseDate } from "@/lib/release-order";
 import type { SlotSummary } from "@/lib/vault";
 import { CartridgeCard } from "./CartridgeCard";
 
-function groupSlots(slots: SlotSummary[]) {
-  const gba = slots.filter((s) => s.generation === 3);
-  const ds = slots.filter((s) => s.generation === 4 || s.generation === 5);
-  const n3ds = slots.filter((s) => s.generation === 6 || s.generation === 7);
-  const nsw = slots.filter((s) => s.generation === 8 || s.generation === 9);
-  const other = slots.filter(
-    (s) =>
-      s.generation == null ||
-      (s.generation < 3 || s.generation > 9)
+/** Group by console shelf; release order within each bay. */
+function groupSlotsByConsole(slots: SlotSummary[]) {
+  const gba = sortByReleaseDate(slots.filter((s) => s.generation === 3));
+  const ds = sortByReleaseDate(
+    slots.filter((s) => s.generation === 4 || s.generation === 5)
+  );
+  const n3ds = sortByReleaseDate(
+    slots.filter((s) => s.generation === 6 || s.generation === 7)
+  );
+  const nsw = sortByReleaseDate(
+    slots.filter((s) => s.generation === 8 || s.generation === 9)
+  );
+  const other = sortByReleaseDate(
+    slots.filter(
+      (s) => s.generation == null || s.generation < 3 || s.generation > 9
+    )
   );
 
   // Small collections stay on one shelf so the grid doesn't feel sparse.
   const known = [...gba, ...ds, ...n3ds, ...nsw];
   if (known.length > 0 && known.length <= 4 && other.length === 0) {
-    return [{ title: "YOUR GAMES", slots: known }];
+    return [{ title: "YOUR GAMES", key: "all", slots: known }];
   }
 
-  const rows: { title: string; slots: SlotSummary[] }[] = [];
-  if (gba.length) rows.push({ title: "GBA SHELF", slots: gba });
-  if (ds.length) rows.push({ title: "DS SHELF", slots: ds });
-  if (n3ds.length) rows.push({ title: "3DS SHELF", slots: n3ds });
-  if (nsw.length) rows.push({ title: "SWITCH SHELF", slots: nsw });
-  if (other.length) rows.push({ title: "OTHER", slots: other });
-  return rows.length ? rows : [{ title: "YOUR GAMES", slots }];
+  const rows: { title: string; key: string; slots: SlotSummary[] }[] = [];
+  if (gba.length) rows.push({ title: "GBA SHELF", key: "gba", slots: gba });
+  if (ds.length) rows.push({ title: "DS SHELF", key: "ds", slots: ds });
+  if (n3ds.length) rows.push({ title: "3DS SHELF", key: "3ds", slots: n3ds });
+  if (nsw.length) rows.push({ title: "SWITCH SHELF", key: "switch", slots: nsw });
+  if (other.length) rows.push({ title: "OTHER", key: "other", slots: other });
+  return rows.length
+    ? rows
+    : [{ title: "YOUR GAMES", key: "all", slots: sortByReleaseDate(slots) }];
 }
 
 export function Shelf({ slots }: { slots: SlotSummary[] }) {
@@ -41,10 +51,10 @@ export function Shelf({ slots }: { slots: SlotSummary[] }) {
             </div>
             <p className="empty-shelf__press">PRESS START</p>
             <p className="empty-shelf__copy">
-              No games yet. Insert a cartridge to begin.
+              No runs yet. Start a new run to begin tracking a save.
             </p>
-            <Link className="btn btn-primary" href="/upload">
-              Insert save
+            <Link className="btn btn-primary" href="/upload?mode=new">
+              New run
             </Link>
           </div>
         </div>
@@ -52,12 +62,22 @@ export function Shelf({ slots }: { slots: SlotSummary[] }) {
     );
   }
 
-  const rows = groupSlots(slots);
+  const rows = groupSlotsByConsole(slots);
 
   return (
     <div className="shelf-scene">
+      <div className="shelf-toolbar">
+        <p className="muted shelf-toolbar__hint">
+          Each cartridge is a separate run. Start another anytime — old runs
+          stay.
+        </p>
+        <Link className="btn btn-primary" href="/upload?mode=new">
+          New run
+        </Link>
+      </div>
+
       {rows.map((row) => (
-        <section key={row.title} className="shelf-row">
+        <section key={row.key} className="shelf-row">
           <h2 className="shelf-row__label">{row.title}</h2>
           <div className="shelf-bay">
             <div className="cartridge-grid">

@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ITEMS = [
   { href: "/", label: "SHELF" },
-  { href: "/upload", label: "SAVE" },
+  { href: "/upload?mode=new", label: "NEW RUN" },
 ] as const;
 
 export function StartMenu() {
@@ -17,9 +17,9 @@ export function StartMenu() {
       <ul className="start-menu__list">
         {ITEMS.map((item) => {
           const active =
-            item.href === "/"
+            item.label === "SHELF"
               ? pathname === "/"
-              : pathname.startsWith(item.href);
+              : pathname.startsWith("/upload");
           return (
             <li key={item.href}>
               <Link href={item.href} data-active={active}>

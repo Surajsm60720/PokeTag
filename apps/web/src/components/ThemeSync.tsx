@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import {
-  DEFAULT_THEME,
-  resolveTheme,
-  themeEra,
-  themePlatform,
+  applyThemeToDocument,
+  restoreDocumentTheme,
 } from "@/lib/theme";
 
-/** Applies the save's game theme to `<html>` for the lifetime of this mount. */
+/**
+ * Applies the save's game theme to `<html>` for the lifetime of this mount.
+ */
 export function ThemeSync({
   gameVersion,
 }: {
@@ -17,22 +17,9 @@ export function ThemeSync({
   useEffect(() => {
     if (!gameVersion) return;
 
-    const theme = resolveTheme(gameVersion);
-    const root = document.documentElement;
-    const prev = {
-      theme: root.dataset.theme,
-      era: root.dataset.era,
-      platform: root.dataset.platform,
-    };
-
-    root.dataset.theme = theme;
-    root.dataset.era = themeEra(theme);
-    root.dataset.platform = themePlatform(theme);
-
+    const prev = applyThemeToDocument(gameVersion);
     return () => {
-      root.dataset.theme = prev.theme || DEFAULT_THEME;
-      root.dataset.era = prev.era || "gen3";
-      root.dataset.platform = prev.platform || "gba";
+      restoreDocumentTheme(prev);
     };
   }, [gameVersion]);
 

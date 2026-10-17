@@ -8,8 +8,8 @@ export default function HomePage() {
   const slots = listSlots();
   const copy =
     slots.length === 0
-      ? "The shelf is empty. Insert a cartridge to begin your collection."
-      : `You have ${slots.length} game${slots.length === 1 ? "" : "s"} on the shelf. Pick a cartridge!`;
+      ? "The shelf is empty. Open NEW RUN to start tracking a save."
+      : `You have ${slots.length} run${slots.length === 1 ? "" : "s"} on the shelf. Pick one, or start another with NEW RUN.`;
 
   return (
     <main className="stack">
