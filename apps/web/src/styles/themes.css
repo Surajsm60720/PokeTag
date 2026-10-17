@@ -1,0 +1,850 @@
+/*
+ * Art direction (shelf / FireRed base):
+ * Mood — Pallet Town morning: cream windows, grass field, warm wood shelf
+ * Signature — Physical media on a real shelf (hero of every visit)
+ * Never — Spreadsheet grass grids, flat cart boxes, official logo yellow/blue outline
+ *
+ * Colours evoke each game; they are not sampled from official art.
+ * Fonts are open-licence lookalikes — never proprietary game fonts.
+ */
+
+:root {
+  /* Era dial (GBA default for shelf) */
+  --px: 3px;
+  --pixel-ui: 1;
+  --corner: notch;
+  --radius: 0px;
+  --bevel: 2;
+  --glass-blur: 0px;
+  --glass-alpha: 0.12;
+  --dither-alpha: 0.08;
+  --scanline-alpha: 0.05;
+  --ease: steps(4, end);
+  --fps-step: 8;
+  --shadow: rgba(0, 0, 0, 0.28);
+  --text-shadow: color-mix(in srgb, var(--color-ink) 35%, transparent);
+  --grid: calc(var(--px) * 8 / 3);
+  --pixel-scale: 3;
+}
+
+/*
+ * Font stacks must live on `html` (same node as next/font CSS variables).
+ * Defining them on :root alone resolves before --font-press-start exists → Times.
+ */
+html {
+  --font-display: var(--font-press-start), ui-monospace, "Courier New", monospace;
+  --font-ui: var(--font-pixelify), ui-monospace, "Courier New", monospace;
+  --font-numeric: var(--font-vt323), ui-monospace, "Courier New", monospace;
+  --font-title: var(--font-display);
+  --font-num: var(--font-numeric);
+}
+
+@media (max-width: 640px) {
+  :root {
+    --px: 2px;
+    --pixel-scale: 2;
+  }
+}
+
+/* DS family — softer glass, lighter pixel intensity */
+html[data-platform="ds"] {
+  --pixel-ui: 0.85;
+  --glass-blur: 6px;
+  --glass-alpha: 0.16;
+  --dither-alpha: 0.05;
+  --scanline-alpha: 0.03;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --radius: 2px;
+  --font-display: var(--font-pixelify), ui-monospace, "Courier New", monospace;
+  --font-ui: var(--font-dotgothic), var(--font-pixelify), ui-monospace, "Courier New",
+    monospace;
+  --font-title: var(--font-display);
+}
+
+html[data-era="gen5"] {
+  --font-display: var(--font-silkscreen), ui-monospace, "Courier New", monospace;
+  --font-title: var(--font-display);
+  --bevel: 1;
+  --glass-blur: 8px;
+}
+
+/* 3DS family — rounded, glassy, light pixel accents only */
+html[data-platform="3ds"] {
+  --pixel-ui: 0.35;
+  --corner: round;
+  --radius: 12px;
+  --bevel: 0;
+  --glass-blur: 10px;
+  --glass-alpha: 0.22;
+  --dither-alpha: 0.02;
+  --scanline-alpha: 0.015;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --font-display: var(--font-zenmaru), system-ui, sans-serif;
+  --font-ui: var(--font-zenmaru), system-ui, sans-serif;
+  --font-numeric: var(--font-nunito), system-ui, sans-serif;
+  --font-title: var(--font-display);
+  --font-num: var(--font-numeric);
+}
+
+/* Switch — cinematic, fluid, almost no pixel chrome */
+html[data-platform="switch"] {
+  --pixel-ui: 0.12;
+  --corner: round;
+  --radius: 16px;
+  --bevel: 0;
+  --glass-blur: 16px;
+  --glass-alpha: 0.28;
+  --dither-alpha: 0;
+  --scanline-alpha: 0;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --font-display: var(--font-barlow), system-ui, sans-serif;
+  --font-ui: var(--font-nunito), system-ui, sans-serif;
+  --font-numeric: var(--font-nunito), system-ui, sans-serif;
+  --font-title: var(--font-display);
+  --font-num: var(--font-numeric);
+}
+
+html[data-era="gen8-hisui"] {
+  --font-display: var(--font-zenmaru), Georgia, serif;
+  --font-ui: var(--font-zenmaru), Georgia, serif;
+  --font-title: var(--font-display);
+  --radius: 8px;
+  --glass-blur: 4px;
+}
+
+/* ---------- Per-game palettes ---------- */
+
+:root,
+[data-theme="firered"] {
+  --color-accent: #d8402a;
+  --color-accent-alt: #4ca83b;
+  --color-cream: #f4efd8;
+  --color-ink: #2b2b3a;
+  --color-panel: #f4efd8;
+  --color-panel-solid: #f4efd8;
+  --color-glass: rgba(244, 239, 216, 0.14);
+  --color-bevel-light: #fff8e8;
+  --color-bevel-dark: #5a4038;
+  --color-bg-a: #5a9a4a;
+  --color-bg-b: #3d6b38;
+  --color-grass-light: #7ec850;
+  --color-grass-dark: #4a9038;
+  --color-sky: #78c8f0;
+  --color-wood: #8b5a2b;
+  --color-wood-dark: #5c3a18;
+  --color-wood-light: #c4894a;
+  --color-shell: #c8ccd0;
+  --color-shell-dark: #6a7078;
+  --cart-body: #d8402a;
+  --cart-hi: #f06050;
+  --cart-lo: #8a2018;
+  --cart-label: #f4efd8;
+  --cart-stripe: #2b2b3a;
+  --bg-sky: var(--color-sky);
+  --bg-ground: var(--color-grass-light);
+  --panel: var(--color-panel);
+  --ink: var(--color-ink);
+  --hi: var(--color-bevel-light);
+  --lo: var(--color-bevel-dark);
+  --accent: var(--color-accent);
+  --accent-2: var(--color-accent-alt);
+}
+
+[data-theme="leafgreen"] {
+  --color-accent: #4ca83b;
+  --color-accent-alt: #d8402a;
+  --color-cream: #f4efd8;
+  --color-ink: #2b2b3a;
+  --color-panel: #f4efd8;
+  --color-bevel-light: #e8f8d8;
+  --color-bevel-dark: #2f5a28;
+  --color-bg-a: #5aaa48;
+  --color-bg-b: #2f6230;
+  --color-grass-light: #88d060;
+  --color-grass-dark: #3e8830;
+  --cart-body: #4ca83b;
+  --cart-hi: #6cc85a;
+  --cart-lo: #2a6820;
+  --cart-label: #f4efd8;
+  --cart-stripe: #1e4a1a;
+}
+
+[data-theme="emerald"] {
+  --color-accent: #1e8f52;
+  --color-accent-alt: #b21e35;
+  --color-cream: #e8d9a8;
+  --color-ink: #1a2a28;
+  --color-panel: #e8d9a8;
+  --color-bevel-light: #f4ecd0;
+  --color-bevel-dark: #145a38;
+  --color-bg-a: #3aa878;
+  --color-bg-b: #1f4fa3;
+  --color-grass-light: #48c878;
+  --color-grass-dark: #1e8f52;
+  --color-sky: #8fd3f4;
+  --cart-body: #1e8f52;
+  --cart-hi: #3cbc72;
+  --cart-lo: #0a5030;
+  --cart-label: #e8d9a8;
+  --cart-stripe: #0a4030;
+}
+
+[data-theme="ruby"] {
+  --color-accent: #b21e35;
+  --color-accent-alt: #1f4fa3;
+  --color-cream: #e8d9a8;
+  --color-ink: #2a1a1a;
+  --color-panel: #e8d9a8;
+  --color-bevel-light: #f8e8c8;
+  --color-bevel-dark: #6a1828;
+  --color-bg-a: #c04050;
+  --color-bg-b: #1f4fa3;
+  --cart-body: #b21e35;
+  --cart-hi: #d04058;
+  --cart-lo: #681018;
+  --cart-label: #e8d9a8;
+  --cart-stripe: #4a1018;
+}
+
+[data-theme="sapphire"] {
+  --color-accent: #1f4fa3;
+  --color-accent-alt: #b21e35;
+  --color-cream: #e8d9a8;
+  --color-ink: #152030;
+  --color-panel: #e8d9a8;
+  --color-bevel-light: #d8e8f8;
+  --color-bevel-dark: #143868;
+  --color-bg-a: #3a78c8;
+  --color-bg-b: #8fd3f4;
+  --cart-body: #1f4fa3;
+  --cart-hi: #3a78c8;
+  --cart-lo: #0a2848;
+  --cart-label: #e8d9a8;
+  --cart-stripe: #0a2048;
+}
+
+[data-theme="diamond"] {
+  --color-accent: #7aa0d8;
+  --color-accent-alt: #e8b4c8;
+  --color-cream: #f2f6fa;
+  --color-ink: #243048;
+  --color-panel: #f2f6fa;
+  --color-panel-solid: #f2f6fa;
+  --color-glass: rgba(242, 246, 250, 0.16);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #3a5078;
+  --color-bg-a: #7aa0d8;
+  --color-bg-b: #4a6888;
+  --color-grass-light: #c8d8e8;
+  --color-grass-dark: #6a88a8;
+  --color-sky: #b8d0f0;
+  --color-wood: #6a7888;
+  --color-wood-dark: #3a4858;
+  --color-wood-light: #98a8b8;
+  --cart-body: #7aa0d8;
+  --cart-hi: #9ab8e8;
+  --cart-lo: #3a5888;
+  --cart-label: #f2f6fa;
+  --cart-stripe: #243048;
+}
+
+[data-theme="pearl"] {
+  --color-accent: #e8b4c8;
+  --color-accent-alt: #7aa0d8;
+  --color-cream: #faf2f6;
+  --color-ink: #483048;
+  --color-panel: #faf2f6;
+  --color-panel-solid: #faf2f6;
+  --color-glass: rgba(250, 242, 246, 0.16);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #784868;
+  --color-bg-a: #e8b4c8;
+  --color-bg-b: #887898;
+  --color-grass-light: #e8d0d8;
+  --color-grass-dark: #a88898;
+  --color-sky: #f0d0e0;
+  --color-wood: #887888;
+  --color-wood-dark: #584858;
+  --color-wood-light: #b8a8b0;
+  --cart-body: #e8b4c8;
+  --cart-hi: #f0ccd8;
+  --cart-lo: #986878;
+  --cart-label: #faf2f6;
+  --cart-stripe: #483048;
+}
+
+[data-theme="platinum"] {
+  --color-accent: #8c93a0;
+  --color-accent-alt: #7aa0d8;
+  --color-cream: #f2f4f8;
+  --color-ink: #2a3038;
+  --color-panel: #f2f4f8;
+  --color-panel-solid: #f2f4f8;
+  --color-glass: rgba(242, 244, 248, 0.16);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #484e58;
+  --color-bg-a: #8c93a0;
+  --color-bg-b: #505860;
+  --color-grass-light: #c8ccd0;
+  --color-grass-dark: #686e78;
+  --color-sky: #d0d4dc;
+  --color-wood: #707880;
+  --color-wood-dark: #384048;
+  --color-wood-light: #a0a8b0;
+  --cart-body: #8c93a0;
+  --cart-hi: #a8b0bc;
+  --cart-lo: #484e58;
+  --cart-label: #f2f4f8;
+  --cart-stripe: #2a3038;
+}
+
+[data-theme="heartgold"] {
+  --color-accent: #d9a441;
+  --color-accent-alt: #1f5f6b;
+  --color-cream: #f6ebc9;
+  --color-ink: #2a2418;
+  --color-panel: #f6ebc9;
+  --color-panel-solid: #f6ebc9;
+  --color-glass: rgba(246, 235, 201, 0.16);
+  --color-bevel-light: #fff8e0;
+  --color-bevel-dark: #6a5020;
+  --color-bg-a: #d9a441;
+  --color-bg-b: #1f5f6b;
+  --color-grass-light: #88b868;
+  --color-grass-dark: #3e7840;
+  --color-sky: #78b8d0;
+  --color-wood: #8b6a2b;
+  --color-wood-dark: #5c4018;
+  --color-wood-light: #c4a060;
+  --cart-body: #d9a441;
+  --cart-hi: #ecc870;
+  --cart-lo: #8a6020;
+  --cart-label: #f6ebc9;
+  --cart-stripe: #1f5f6b;
+}
+
+[data-theme="soulsilver"] {
+  --color-accent: #b8c2cc;
+  --color-accent-alt: #1f5f6b;
+  --color-cream: #f0f2f6;
+  --color-ink: #1e2830;
+  --color-panel: #f0f2f6;
+  --color-panel-solid: #f0f2f6;
+  --color-glass: rgba(240, 242, 246, 0.16);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #485868;
+  --color-bg-a: #b8c2cc;
+  --color-bg-b: #1f5f6b;
+  --color-grass-light: #78a898;
+  --color-grass-dark: #386858;
+  --color-sky: #98b8c8;
+  --color-wood: #687888;
+  --color-wood-dark: #384858;
+  --color-wood-light: #98a8b8;
+  --cart-body: #b8c2cc;
+  --cart-hi: #d0d8e0;
+  --cart-lo: #687078;
+  --cart-label: #f0f2f6;
+  --cart-stripe: #1f5f6b;
+}
+
+[data-theme="black"] {
+  --color-accent: #e5483b;
+  --color-accent-alt: #f2f4f8;
+  --color-cream: #f2f4f8;
+  --color-ink: #1c1c22;
+  --color-panel: #f2f4f8;
+  --color-panel-solid: #f2f4f8;
+  --color-glass: rgba(242, 244, 248, 0.14);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #2a2a32;
+  --color-bg-a: #3a3a44;
+  --color-bg-b: #1c1c22;
+  --color-grass-light: #4a4a55;
+  --color-grass-dark: #2a2a32;
+  --color-sky: #5a5a68;
+  --color-wood: #3a3a44;
+  --color-wood-dark: #18181e;
+  --color-wood-light: #5a5a68;
+  --cart-body: #1c1c22;
+  --cart-hi: #3a3a44;
+  --cart-lo: #0a0a0e;
+  --cart-label: #f2f4f8;
+  --cart-stripe: #e5483b;
+}
+
+[data-theme="white"] {
+  --color-accent: #e5483b;
+  --color-accent-alt: #1c1c22;
+  --color-cream: #f2f4f8;
+  --color-ink: #1c1c22;
+  --color-panel: #ffffff;
+  --color-panel-solid: #ffffff;
+  --color-glass: rgba(255, 255, 255, 0.2);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #686878;
+  --color-bg-a: #e8eaf0;
+  --color-bg-b: #c8ccd8;
+  --color-grass-light: #d8dce8;
+  --color-grass-dark: #9898a8;
+  --color-sky: #f2f4f8;
+  --color-wood: #c8ccd8;
+  --color-wood-dark: #888898;
+  --color-wood-light: #e8eaf0;
+  --cart-body: #f2f4f8;
+  --cart-hi: #ffffff;
+  --cart-lo: #c8ccd8;
+  --cart-label: #ffffff;
+  --cart-stripe: #e5483b;
+}
+
+[data-theme="black2"] {
+  --color-accent: #e0b24a;
+  --color-accent-alt: #e5483b;
+  --color-cream: #e9ecf5;
+  --color-ink: #1a1c28;
+  --color-panel: #e9ecf5;
+  --color-panel-solid: #e9ecf5;
+  --color-glass: rgba(233, 236, 245, 0.14);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #2b2f45;
+  --color-bg-a: #2b2f45;
+  --color-bg-b: #1a1c28;
+  --color-grass-light: #3a4058;
+  --color-grass-dark: #222638;
+  --color-sky: #484e68;
+  --color-wood: #2b2f45;
+  --color-wood-dark: #14161e;
+  --color-wood-light: #484e68;
+  --cart-body: #2b2f45;
+  --cart-hi: #484e68;
+  --cart-lo: #12141c;
+  --cart-label: #e9ecf5;
+  --cart-stripe: #e0b24a;
+}
+
+[data-theme="white2"] {
+  --color-accent: #e0b24a;
+  --color-accent-alt: #2b2f45;
+  --color-cream: #e9ecf5;
+  --color-ink: #1a1c28;
+  --color-panel: #ffffff;
+  --color-panel-solid: #ffffff;
+  --color-glass: rgba(255, 255, 255, 0.2);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #686e88;
+  --color-bg-a: #e9ecf5;
+  --color-bg-b: #b8c0d8;
+  --color-grass-light: #d0d4e8;
+  --color-grass-dark: #888ea8;
+  --color-sky: #f0f2f8;
+  --color-wood: #c0c8d8;
+  --color-wood-dark: #787e98;
+  --color-wood-light: #e9ecf5;
+  --cart-body: #e9ecf5;
+  --cart-hi: #ffffff;
+  --cart-lo: #b8c0d8;
+  --cart-label: #ffffff;
+  --cart-stripe: #e0b24a;
+}
+
+/* Gen 6 — Kalos / Hoenn remakes (3DS) */
+[data-theme="x"] {
+  --color-accent: #3a6fd8;
+  --color-accent-alt: #d9a441;
+  --color-cream: #f7f9fc;
+  --color-ink: #1e2a44;
+  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-panel-solid: #f7f9fc;
+  --color-glass: rgba(255, 255, 255, 0.28);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #3a5080;
+  --color-bg-a: #6a98e8;
+  --color-bg-b: #3a6fd8;
+  --color-grass-light: #c8d8f0;
+  --color-grass-dark: #6888c0;
+  --color-sky: #a8c8f8;
+  --color-wood: #8898b8;
+  --color-wood-dark: #485878;
+  --color-wood-light: #b8c8e0;
+  --cart-body: #3a6fd8;
+  --cart-hi: #6a98e8;
+  --cart-lo: #1e4898;
+  --cart-label: #f7f9fc;
+  --cart-stripe: #d9a441;
+}
+
+[data-theme="y"] {
+  --color-accent: #d63a4a;
+  --color-accent-alt: #d9a441;
+  --color-cream: #fff8f6;
+  --color-ink: #3a1e24;
+  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-panel-solid: #fff8f6;
+  --color-glass: rgba(255, 248, 246, 0.28);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #883040;
+  --color-bg-a: #e86870;
+  --color-bg-b: #d63a4a;
+  --color-grass-light: #f0d0d0;
+  --color-grass-dark: #c07078;
+  --color-sky: #f8c8c8;
+  --color-wood: #b88890;
+  --color-wood-dark: #684048;
+  --color-wood-light: #e0b8c0;
+  --cart-body: #d63a4a;
+  --cart-hi: #e86870;
+  --cart-lo: #881828;
+  --cart-label: #fff8f6;
+  --cart-stripe: #d9a441;
+}
+
+[data-theme="omegaruby"] {
+  --color-accent: #c42838;
+  --color-accent-alt: #e8a060;
+  --color-cream: #f6e8d0;
+  --color-ink: #2a1818;
+  --color-panel: rgba(246, 232, 208, 0.94);
+  --color-panel-solid: #f6e8d0;
+  --color-glass: rgba(246, 232, 208, 0.24);
+  --color-bevel-light: #fff4e0;
+  --color-bevel-dark: #782028;
+  --color-bg-a: #d85040;
+  --color-bg-b: #682028;
+  --color-grass-light: #d8a878;
+  --color-grass-dark: #885030;
+  --color-sky: #f0b878;
+  --color-wood: #8b4a2b;
+  --color-wood-dark: #5c2818;
+  --color-wood-light: #c4804a;
+  --cart-body: #c42838;
+  --cart-hi: #e05060;
+  --cart-lo: #681018;
+  --cart-label: #f6e8d0;
+  --cart-stripe: #e8a060;
+}
+
+[data-theme="alphasapphire"] {
+  --color-accent: #1a6fb8;
+  --color-accent-alt: #68d0e8;
+  --color-cream: #e8f4f8;
+  --color-ink: #142838;
+  --color-panel: rgba(232, 244, 248, 0.94);
+  --color-panel-solid: #e8f4f8;
+  --color-glass: rgba(232, 244, 248, 0.24);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #184868;
+  --color-bg-a: #3a98d0;
+  --color-bg-b: #145888;
+  --color-grass-light: #78c0d8;
+  --color-grass-dark: #387898;
+  --color-sky: #98d8f0;
+  --color-wood: #487898;
+  --color-wood-dark: #284858;
+  --color-wood-light: #88b0c8;
+  --cart-body: #1a6fb8;
+  --cart-hi: #3a98d0;
+  --cart-lo: #0a3868;
+  --cart-label: #e8f4f8;
+  --cart-stripe: #68d0e8;
+}
+
+/* Gen 7 — Alola (3DS) */
+[data-theme="sun"] {
+  --color-accent: #f2933a;
+  --color-accent-alt: #2a9a8a;
+  --color-cream: #fff6e8;
+  --color-ink: #3a2818;
+  --color-panel: rgba(255, 246, 232, 0.92);
+  --color-panel-solid: #fff6e8;
+  --color-glass: rgba(255, 246, 232, 0.26);
+  --color-bevel-light: #fffaf0;
+  --color-bevel-dark: #a06020;
+  --color-bg-a: #f8b050;
+  --color-bg-b: #e86828;
+  --color-grass-light: #68c898;
+  --color-grass-dark: #2a8870;
+  --color-sky: #f8c878;
+  --color-wood: #c88840;
+  --color-wood-dark: #785020;
+  --color-wood-light: #e8b068;
+  --cart-body: #f2933a;
+  --cart-hi: #f8b868;
+  --cart-lo: #a85818;
+  --cart-label: #fff6e8;
+  --cart-stripe: #2a9a8a;
+}
+
+[data-theme="moon"] {
+  --color-accent: #4b3f9e;
+  --color-accent-alt: #e8a0c8;
+  --color-cream: #eef0f8;
+  --color-ink: #1e1840;
+  --color-panel: rgba(238, 240, 248, 0.92);
+  --color-panel-solid: #eef0f8;
+  --color-glass: rgba(238, 240, 248, 0.26);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #302868;
+  --color-bg-a: #6860b8;
+  --color-bg-b: #2a2468;
+  --color-grass-light: #6870a8;
+  --color-grass-dark: #383878;
+  --color-sky: #303060;
+  --color-wood: #484868;
+  --color-wood-dark: #282848;
+  --color-wood-light: #787898;
+  --cart-body: #4b3f9e;
+  --cart-hi: #7868c8;
+  --cart-lo: #281868;
+  --cart-label: #eef0f8;
+  --cart-stripe: #e8a0c8;
+}
+
+[data-theme="ultrasun"] {
+  --color-accent: #ffb020;
+  --color-accent-alt: #c050e8;
+  --color-cream: #fff8ec;
+  --color-ink: #3a2810;
+  --color-panel: rgba(255, 248, 236, 0.92);
+  --color-panel-solid: #fff8ec;
+  --color-glass: rgba(255, 248, 236, 0.28);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #a86810;
+  --color-bg-a: #ffc848;
+  --color-bg-b: #e87820;
+  --color-grass-light: #80d0a8;
+  --color-grass-dark: #389878;
+  --color-sky: #ffd878;
+  --color-wood: #d09840;
+  --color-wood-dark: #805820;
+  --color-wood-light: #f0c070;
+  --cart-body: #ffb020;
+  --cart-hi: #ffd060;
+  --cart-lo: #b86810;
+  --cart-label: #fff8ec;
+  --cart-stripe: #c050e8;
+}
+
+[data-theme="ultramoon"] {
+  --color-accent: #5a48c8;
+  --color-accent-alt: #48e0d0;
+  --color-cream: #f0f0ff;
+  --color-ink: #181430;
+  --color-panel: rgba(240, 240, 255, 0.92);
+  --color-panel-solid: #f0f0ff;
+  --color-glass: rgba(240, 240, 255, 0.28);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #302878;
+  --color-bg-a: #7868e0;
+  --color-bg-b: #201848;
+  --color-grass-light: #5860a0;
+  --color-grass-dark: #303068;
+  --color-sky: #282050;
+  --color-wood: #404068;
+  --color-wood-dark: #202040;
+  --color-wood-light: #707098;
+  --cart-body: #5a48c8;
+  --cart-hi: #8878e8;
+  --cart-lo: #281878;
+  --cart-label: #f0f0ff;
+  --cart-stripe: #48e0d0;
+}
+
+/* Gen 8 — Galar / BDSP / Hisui (Switch) */
+[data-theme="sword"] {
+  --color-accent: #2956c7;
+  --color-accent-alt: #d4a84a;
+  --color-cream: #f4f6fa;
+  --color-ink: #12182a;
+  --color-panel: rgba(255, 255, 255, 0.9);
+  --color-panel-solid: #f4f6fa;
+  --color-glass: rgba(255, 255, 255, 0.32);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #203868;
+  --color-bg-a: #4a78e0;
+  --color-bg-b: #1a3888;
+  --color-grass-light: #68a878;
+  --color-grass-dark: #386848;
+  --color-sky: #88b8f0;
+  --color-wood: #5a6888;
+  --color-wood-dark: #303848;
+  --color-wood-light: #98a8c8;
+  --cart-body: #2956c7;
+  --cart-hi: #4a78e0;
+  --cart-lo: #142868;
+  --cart-label: #f4f6fa;
+  --cart-stripe: #d4a84a;
+}
+
+[data-theme="shield"] {
+  --color-accent: #b52a5b;
+  --color-accent-alt: #d4a84a;
+  --color-cream: #faf4f6;
+  --color-ink: #2a1218;
+  --color-panel: rgba(255, 255, 255, 0.9);
+  --color-panel-solid: #faf4f6;
+  --color-glass: rgba(255, 255, 255, 0.32);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #681830;
+  --color-bg-a: #d04878;
+  --color-bg-b: #781838;
+  --color-grass-light: #68a878;
+  --color-grass-dark: #386848;
+  --color-sky: #e8a0b8;
+  --color-wood: #885868;
+  --color-wood-dark: #482830;
+  --color-wood-light: #c898a8;
+  --cart-body: #b52a5b;
+  --cart-hi: #d04878;
+  --cart-lo: #681028;
+  --cart-label: #faf4f6;
+  --cart-stripe: #d4a84a;
+}
+
+[data-theme="brilliantdiamond"] {
+  --color-accent: #5a9ae0;
+  --color-accent-alt: #c0c8d8;
+  --color-cream: #f6f8fc;
+  --color-ink: #1e2838;
+  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-panel-solid: #f6f8fc;
+  --color-glass: rgba(255, 255, 255, 0.3);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #406088;
+  --color-bg-a: #88b8f0;
+  --color-bg-b: #4070b0;
+  --color-grass-light: #d0e0f0;
+  --color-grass-dark: #7898b8;
+  --color-sky: #c0d8f8;
+  --color-wood: #7890a8;
+  --color-wood-dark: #405060;
+  --color-wood-light: #b0c0d0;
+  --cart-body: #5a9ae0;
+  --cart-hi: #88b8f0;
+  --cart-lo: #2860a0;
+  --cart-label: #f6f8fc;
+  --cart-stripe: #c0c8d8;
+}
+
+[data-theme="shiningpearl"] {
+  --color-accent: #e8a0c0;
+  --color-accent-alt: #c0c8d8;
+  --color-cream: #fcf6f8;
+  --color-ink: #382028;
+  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-panel-solid: #fcf6f8;
+  --color-glass: rgba(255, 255, 255, 0.3);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #885868;
+  --color-bg-a: #f0c0d0;
+  --color-bg-b: #c07898;
+  --color-grass-light: #f0d8e0;
+  --color-grass-dark: #b08898;
+  --color-sky: #f8d8e8;
+  --color-wood: #a88898;
+  --color-wood-dark: #604850;
+  --color-wood-light: #d8b8c8;
+  --cart-body: #e8a0c0;
+  --cart-hi: #f0c0d0;
+  --cart-lo: #a06080;
+  --cart-label: #fcf6f8;
+  --cart-stripe: #c0c8d8;
+}
+
+[data-theme="legendsarceus"] {
+  --color-accent: #5a7040;
+  --color-accent-alt: #8b5a2b;
+  --color-cream: #e8dcc0;
+  --color-ink: #2a2010;
+  --color-panel: #e8dcc0;
+  --color-panel-solid: #e8dcc0;
+  --color-glass: rgba(232, 220, 192, 0.2);
+  --color-bevel-light: #f4ecd8;
+  --color-bevel-dark: #5a4830;
+  --color-bg-a: #88a068;
+  --color-bg-b: #3a4830;
+  --color-grass-light: #789058;
+  --color-grass-dark: #405030;
+  --color-sky: #a8b890;
+  --color-wood: #6a5030;
+  --color-wood-dark: #3a2818;
+  --color-wood-light: #a08050;
+  --cart-body: #8b5a2b;
+  --cart-hi: #b07840;
+  --cart-lo: #4a3018;
+  --cart-label: #e8dcc0;
+  --cart-stripe: #5a7040;
+}
+
+/* Gen 9 — Paldea (Switch) */
+[data-theme="scarlet"] {
+  --color-accent: #e8472f;
+  --color-accent-alt: #e0b24a;
+  --color-cream: #faf4ec;
+  --color-ink: #2a1810;
+  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-panel-solid: #faf4ec;
+  --color-glass: rgba(255, 255, 255, 0.3);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #882818;
+  --color-bg-a: #f07050;
+  --color-bg-b: #c03020;
+  --color-grass-light: #88c070;
+  --color-grass-dark: #488040;
+  --color-sky: #f8c090;
+  --color-wood: #a86840;
+  --color-wood-dark: #583018;
+  --color-wood-light: #d0a070;
+  --cart-body: #e8472f;
+  --cart-hi: #f07050;
+  --cart-lo: #881810;
+  --cart-label: #faf4ec;
+  --cart-stripe: #e0b24a;
+}
+
+[data-theme="violet"] {
+  --color-accent: #7b4bc4;
+  --color-accent-alt: #e0b24a;
+  --color-cream: #f6f2fa;
+  --color-ink: #201828;
+  --color-panel: rgba(255, 255, 255, 0.92);
+  --color-panel-solid: #f6f2fa;
+  --color-glass: rgba(255, 255, 255, 0.3);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #483068;
+  --color-bg-a: #9870d8;
+  --color-bg-b: #503088;
+  --color-grass-light: #88c070;
+  --color-grass-dark: #488040;
+  --color-sky: #c0a8e8;
+  --color-wood: #786098;
+  --color-wood-dark: #403058;
+  --color-wood-light: #b098c8;
+  --cart-body: #7b4bc4;
+  --cart-hi: #9870d8;
+  --cart-lo: #402878;
+  --cart-label: #f6f2fa;
+  --cart-stripe: #e0b24a;
+}
+
+[data-theme="unknown"] {
+  --color-accent: #6a7080;
+  --color-accent-alt: #d8402a;
+  --color-cream: #f2f6fa;
+  --color-ink: #2b2b3a;
+  --color-panel: #f2f6fa;
+  --color-panel-solid: #f2f6fa;
+  --color-glass: rgba(242, 246, 250, 0.14);
+  --color-bevel-light: #ffffff;
+  --color-bevel-dark: #3a4050;
+  --color-bg-a: #6a7080;
+  --color-bg-b: #3a4050;
+  --color-grass-light: #8890a0;
+  --color-grass-dark: #4a5060;
+  --color-sky: #a0a8b8;
+  --cart-body: #6a7080;
+  --cart-hi: #8890a0;
+  --cart-lo: #3a4050;
+  --cart-label: #f2f6fa;
+  --cart-stripe: #2b2b3a;
+}

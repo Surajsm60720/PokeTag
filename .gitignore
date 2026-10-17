@@ -1,0 +1,39 @@
+# Dependencies & build
+node_modules/
+.next/
+dist/
+build/
+out/
+coverage/
+.turbo/
+*.tsbuildinfo
+
+# Local data & object-store mirrors (saves, SQLite)
+data/
+*.sqlite
+*.sqlite-*
+
+# Secrets / local env (keep .env.example)
+.env
+.env.*
+!.env.example
+apps/web/.env
+apps/web/.env.*
+!apps/web/.env.example
+
+# OS / editor junk
+.DS_Store
+*.log
+*.pem
+.vercel/
+
+# Real save fixtures (keep placeholder)
+packages/save-format/fixtures/*.sav
+packages/save-format/fixtures/*.dsv
+packages/save-format/fixtures/*.srm
+!packages/save-format/fixtures/.gitkeep
+
+# Cursor local state (commit shared project skills only)
+.cursor/*
+!.cursor/skills/
+!.cursor/skills/**
