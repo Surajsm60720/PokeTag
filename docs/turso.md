@@ -52,9 +52,10 @@ Add (Production + Preview):
 
 ### 4. Vercel project settings
 
-- **Root Directory:** leave **empty** (repository root). Do **not** set `apps/web` — that skips building `@poketag/save-format` and breaks the deploy.
-- **Framework:** Next.js (or rely on root `vercel.json`)
-- **Install / Build:** from root `vercel.json` → `npm install` then `npm run build`
+- **Root Directory:** set to **`apps/web`** (required — Next writes `.next` here; leaving the root empty causes `NEXT_OUTPUT_DIR_MISSING`)
+- **Framework:** Next.js
+- **Output Directory:** leave default (do not set a custom value)
+- **Install / Build:** use `apps/web/vercel.json` (installs from repo root, builds save-format, then `next build`)
 - **Node:** 20+
 
 ### 5. Deploy
