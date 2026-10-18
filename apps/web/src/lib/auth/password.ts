@@ -1,12 +1,23 @@
 import { randomBytes, scrypt, timingSafeEqual } from "node:crypto";
-import { promisify } from "node:util";
-
-const scryptAsync = promisify(scrypt);
 
 const SCRYPT_N = 16384;
 const SCRYPT_R = 8;
 const SCRYPT_P = 1;
 const KEY_LEN = 64;
+
+function scryptAsync(
+  password: string,
+  salt: Buffer,
+  keylen: number,
+  options: { N: number; r: number; p: number }
+): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    scrypt(password, salt, keylen, options, (err, derived) => {
+      if (err) reject(err);
+      else resolve(derived as Buffer);
+    });
+  });
+}
 
 /**
  * Encoded form (colon-separated so .env loaders do not eat `$` vars):
@@ -15,11 +26,11 @@ const KEY_LEN = 64;
  */
 export async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16);
-  const derived = (await scryptAsync(password, salt, KEY_LEN, {
+  const derived = await scryptAsync(password, salt, KEY_LEN, {
     N: SCRYPT_N,
     r: SCRYPT_R,
     p: SCRYPT_P,
-  })) as Buffer;
+  });
   return [
     "scrypt",
     String(SCRYPT_N),
@@ -59,7 +70,7 @@ export async function verifyPassword(
   const parsed = parseEncoded(encoded.trim());
   if (!parsed) return false;
 
-  const derived = (await scryptAsync(
+  const derived = await scryptAsync(
     password,
     parsed.salt,
     parsed.expected.length,
@@ -68,7 +79,7 @@ export async function verifyPassword(
       r: parsed.r,
       p: parsed.p,
     }
-  )) as Buffer;
+  );
   if (derived.length !== parsed.expected.length) return false;
   return timingSafeEqual(derived, parsed.expected);
 }
