@@ -13,6 +13,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "prepare": "tsc",
     "test": "npm run build && node --test 'dist/**/*.test.js'",
     "prepublishOnly": "npm run build"
   },

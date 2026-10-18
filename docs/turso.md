@@ -52,10 +52,9 @@ Add (Production + Preview):
 
 ### 4. Vercel project settings
 
-- **Root Directory:** leave repo root (workspaces) **or** set to `apps/web` if you prefer a single-package deploy
-- **Framework:** Next.js
-- **Install:** `npm install` at repo root
-- **Build:** `npm run build` (builds save-format then web)
+- **Root Directory:** leave **empty** (repository root). Do **not** set `apps/web` — that skips building `@poketag/save-format` and breaks the deploy.
+- **Framework:** Next.js (or rely on root `vercel.json`)
+- **Install / Build:** from root `vercel.json` → `npm install` then `npm run build`
 - **Node:** 20+
 
 ### 5. Deploy
