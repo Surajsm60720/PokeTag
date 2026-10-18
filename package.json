@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "npm run build -w @poketag/save-format && npm run dev -w @poketag/web",
     "build": "npm run build -w @poketag/save-format && npm run build -w @poketag/web",
-    "test": "npm run test -w @poketag/save-format",
+    "test": "npm run test -w @poketag/save-format && npm run test -w @poketag/web",
     "lint": "npm run lint -w @poketag/web",
     "seed:demo": "NODE_OPTIONS='--experimental-strip-types' node --experimental-strip-types apps/web/scripts/seed-demo.ts",
     "clear:demo": "NODE_OPTIONS='--experimental-strip-types' node --experimental-strip-types apps/web/scripts/clear-demo.ts",

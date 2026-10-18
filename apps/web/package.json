@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "npm run build -w @poketag/save-format && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "node --experimental-strip-types --import ./test/register.mjs --test ./src/lib/vault.test.ts ./src/lib/parse-job.test.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0",

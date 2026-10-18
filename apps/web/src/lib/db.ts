@@ -50,66 +50,140 @@ function mapRow<T extends Record<string, unknown>>(row: Record<string, unknown>)
   return out as T;
 }
 
+/** How long SQLite waits for a lock before returning SQLITE_BUSY. */
+const BUSY_TIMEOUT_MS = 5000;
+
+/**
+ * In-process FIFO for all database work.
+ *
+ * @libsql/client detaches the connection when a transaction starts
+ * (`this.#db = null`), so the next statement opens a *second* connection to
+ * the same file. Two overlapping writers then fight over SQLite's single
+ * write lock and fail with SQLITE_BUSY — which is what concurrent requests,
+ * the background parse job, or a script running alongside `next dev` will do.
+ *
+ * This app is one process, so queue the work instead of racing the lock: a
+ * transaction holds the queue for its whole lifetime, plain statements wait
+ * their turn. It also stops a stray statement from being absorbed into (and
+ * rolled back with) somebody else's transaction.
+ */
+let dbQueue: Promise<void> = Promise.resolve();
+
+function serialize<T>(work: () => Promise<T>): Promise<T> {
+  const result = dbQueue.then(work);
+  dbQueue = result.then(
+    () => undefined,
+    () => undefined
+  );
+  return result;
+}
+
+/**
+ * Set busy_timeout on the connection libsql will actually use, so a *second
+ * process* touching the same file (scripts, a second dev server) waits for
+ * the lock instead of erroring. Remote Turso clients have no such pragma.
+ * Called once at startup and again after every transaction, because a
+ * transaction detaches the connection and the next one is created fresh.
+ */
+async function applyBusyTimeout(c: Client): Promise<void> {
+  if (process.env.TURSO_DATABASE_URL?.trim()) return;
+  try {
+    await c.execute(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+  } catch {
+    // A pragma we cannot set must never block startup or a commit.
+  }
+}
+
 export class Db {
   private readonly conn: TxLike;
+  /**
+   * True for the connection owned by an open transaction. It already holds
+   * the database queue, so its statements run directly — routing them back
+   * through the queue would deadlock against itself.
+   */
+  private readonly exclusive: boolean;
 
-  constructor(conn: TxLike) {
+  constructor(conn: TxLike, options?: { exclusive?: boolean }) {
     this.conn = conn;
+    this.exclusive = options?.exclusive === true;
+  }
+
+  /** Queue behind any in-flight transaction, unless this Db *is* one. */
+  private enqueue<T>(work: () => Promise<T>): Promise<T> {
+    return this.exclusive ? work() : serialize(work);
   }
 
   prepare(sql: string) {
     const conn = this.conn;
+    const enqueue = <T>(work: () => Promise<T>): Promise<T> =>
+      this.enqueue(work);
+
     return {
       async all<T extends Record<string, unknown> = Record<string, unknown>>(
         ...args: SqlValue[]
       ): Promise<T[]> {
-        const result = await conn.execute({ sql, args: asArgs(args) });
-        return result.rows.map((r) => mapRow<T>(r as unknown as Record<string, unknown>));
+        return enqueue(async () => {
+          const result = await conn.execute({ sql, args: asArgs(args) });
+          return result.rows.map((r) =>
+            mapRow<T>(r as unknown as Record<string, unknown>)
+          );
+        });
       },
       async get<T extends Record<string, unknown> = Record<string, unknown>>(
         ...args: SqlValue[]
       ): Promise<T | undefined> {
-        const result = await conn.execute({ sql, args: asArgs(args) });
-        const row = result.rows[0];
-        return row
-          ? mapRow<T>(row as unknown as Record<string, unknown>)
-          : undefined;
+        return enqueue(async () => {
+          const result = await conn.execute({ sql, args: asArgs(args) });
+          const row = result.rows[0];
+          return row
+            ? mapRow<T>(row as unknown as Record<string, unknown>)
+            : undefined;
+        });
       },
-      async run(...args: SqlValue[]): Promise<void> {
-        await conn.execute({ sql, args: asArgs(args) });
+      /** Execute a write. Resolves to rows affected so callers can claim rows. */
+      async run(...args: SqlValue[]): Promise<number> {
+        return enqueue(async () => {
+          const result = await conn.execute({ sql, args: asArgs(args) });
+          return result.rowsAffected;
+        });
       },
     };
   }
 
   async exec(sql: string): Promise<void> {
-    await this.conn.execute(sql);
+    await this.enqueue(async () => {
+      await this.conn.execute(sql);
+    });
   }
 
   async batch(
     statements: Array<{ sql: string; args?: SqlValue[] }>
   ): Promise<void> {
-    if (!("batch" in this.conn) || typeof this.conn.batch !== "function") {
-      for (const s of statements) {
-        await this.conn.execute({
+    await this.enqueue(async () => {
+      if (!("batch" in this.conn) || typeof this.conn.batch !== "function") {
+        for (const s of statements) {
+          await this.conn.execute({
+            sql: s.sql,
+            args: asArgs(s.args ?? []),
+          });
+        }
+        return;
+      }
+      await this.conn.batch(
+        statements.map((s) => ({
           sql: s.sql,
           args: asArgs(s.args ?? []),
-        });
-      }
-      return;
-    }
-    await this.conn.batch(
-      statements.map((s) => ({
-        sql: s.sql,
-        args: asArgs(s.args ?? []),
-      })),
-      "write"
-    );
+        })),
+        "write"
+      );
+    });
   }
 }
 
 export async function getClient(): Promise<Client> {
   if (!client) {
     client = createDbClient();
+    await applyBusyTimeout(client);
   }
   if (!migrated) {
     migrated = migrate(new Db(client));
@@ -123,24 +197,30 @@ export async function getDb(): Promise<Db> {
   return new Db(c);
 }
 
-/** Run work inside a write transaction. */
+/** Run work inside a write transaction with exclusive access to the database. */
 export async function withTransaction<T>(
   fn: (db: Db) => Promise<T>
 ): Promise<T> {
   const c = await getClient();
-  const tx = await c.transaction("write");
-  try {
-    const result = await fn(new Db(tx));
-    await tx.commit();
-    return result;
-  } catch (err) {
+  return serialize(async () => {
+    const tx = await c.transaction("write");
     try {
-      await tx.rollback();
-    } catch {
-      // ignore rollback errors
+      const result = await fn(new Db(tx, { exclusive: true }));
+      await tx.commit();
+      return result;
+    } catch (err) {
+      try {
+        await tx.rollback();
+      } catch {
+        // ignore rollback errors
+      }
+      throw err;
+    } finally {
+      // The transaction detached the connection libsql was holding; prime the
+      // replacement so cross-process runs keep the busy timeout too.
+      await applyBusyTimeout(c);
     }
-    throw err;
-  }
+  });
 }
 
 async function columnExists(
@@ -225,6 +305,16 @@ async function migrate(database: Db): Promise<void> {
   if (!(await columnExists(database, "save_versions", "parsed_at"))) {
     await database.exec(`ALTER TABLE save_versions ADD COLUMN parsed_at TEXT`);
   }
+  if (!(await columnExists(database, "save_versions", "parse_attempts"))) {
+    await database.exec(
+      `ALTER TABLE save_versions ADD COLUMN parse_attempts INTEGER NOT NULL DEFAULT 0`
+    );
+  }
+  if (!(await columnExists(database, "save_versions", "parse_started_at"))) {
+    await database.exec(
+      `ALTER TABLE save_versions ADD COLUMN parse_started_at TEXT`
+    );
+  }
 
   if (!(await columnExists(database, "parsed_snapshots", "inventory_json"))) {
     await database.exec(
@@ -300,4 +390,6 @@ export interface SaveVersionRow {
   parse_status: ParseStatus;
   parse_error: string;
   parsed_at: string | null;
+  parse_attempts: number;
+  parse_started_at: string | null;
 }

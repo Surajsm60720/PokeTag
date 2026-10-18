@@ -1,6 +1,6 @@
 import * as Minio from "minio";
 
-export type StorageDriver = "minio" | "r2";
+export type StorageDriver = "minio" | "r2" | "memory";
 
 export interface StorageConfig {
   driver: StorageDriver;
@@ -19,6 +19,9 @@ let client: Minio.Client | null = null;
 let cachedConfig: StorageConfig | null = null;
 let bucketReady: Promise<void> | null = null;
 
+/** In-process object store backing the "memory" driver (tests / throwaway runs). */
+const memoryObjects = new Map<string, Buffer>();
+
 function env(name: string, fallback?: string): string | undefined {
   const value = process.env[name];
   if (value != null && value !== "") return value;
@@ -27,7 +30,9 @@ function env(name: string, fallback?: string): string | undefined {
 
 export function getStorageDriver(): StorageDriver {
   const explicit = env("STORAGE_DRIVER")?.toLowerCase();
-  if (explicit === "r2" || explicit === "minio") return explicit;
+  if (explicit === "r2" || explicit === "minio" || explicit === "memory") {
+    return explicit;
+  }
   if (env("R2_ACCOUNT_ID") || env("R2_ACCESS_KEY_ID")) return "r2";
   return "minio";
 }
@@ -36,6 +41,21 @@ export function getStorageConfig(): StorageConfig {
   if (cachedConfig) return cachedConfig;
 
   const driver = getStorageDriver();
+
+  if (driver === "memory") {
+    cachedConfig = {
+      driver: "memory",
+      endPoint: "memory",
+      port: 0,
+      useSSL: false,
+      accessKey: "",
+      secretKey: "",
+      bucket: "poketag-memory",
+      region: "local",
+      autoCreateBucket: true,
+    };
+    return cachedConfig;
+  }
 
   if (driver === "r2") {
     const accountId = env("R2_ACCOUNT_ID");
@@ -79,6 +99,7 @@ export function getStorageConfig(): StorageConfig {
 /** Describe the active store for logs/scripts (no secrets). */
 export function describeStorage(): string {
   const c = getStorageConfig();
+  if (c.driver === "memory") return `memory in-process (${c.bucket})`;
   const scheme = c.useSSL ? "https" : "http";
   const portPart =
     (c.useSSL && c.port === 443) || (!c.useSSL && c.port === 80)
@@ -90,6 +111,9 @@ export function describeStorage(): string {
 export function getStorageClient(): Minio.Client {
   if (client) return client;
   const c = getStorageConfig();
+  if (c.driver === "memory") {
+    throw new Error("The memory storage driver has no MinIO client.");
+  }
   client = new Minio.Client({
     endPoint: c.endPoint,
     port: c.port,
@@ -106,6 +130,7 @@ export function getBucket(): string {
 }
 
 export async function ensureBucket(): Promise<void> {
+  if (getStorageConfig().driver === "memory") return;
   if (!bucketReady) {
     bucketReady = (async () => {
       const c = getStorageConfig();
@@ -128,6 +153,10 @@ export async function putObject(
   data: Buffer,
   contentType = "application/octet-stream"
 ): Promise<void> {
+  if (getStorageConfig().driver === "memory") {
+    memoryObjects.set(key, Buffer.from(data));
+    return;
+  }
   await ensureBucket();
   await getStorageClient().putObject(getBucket(), key, data, data.length, {
     "Content-Type": contentType,
@@ -135,6 +164,11 @@ export async function putObject(
 }
 
 export async function getObject(key: string): Promise<Buffer> {
+  if (getStorageConfig().driver === "memory") {
+    const stored = memoryObjects.get(key);
+    if (!stored) throw new Error(`Object not found: ${key}`);
+    return Buffer.from(stored);
+  }
   await ensureBucket();
   const stream = await getStorageClient().getObject(getBucket(), key);
   const chunks: Buffer[] = [];
@@ -145,8 +179,22 @@ export async function getObject(key: string): Promise<Buffer> {
 }
 
 export async function deleteObject(key: string): Promise<void> {
+  if (getStorageConfig().driver === "memory") {
+    memoryObjects.delete(key);
+    return;
+  }
   await ensureBucket();
   await getStorageClient().removeObject(getBucket(), key);
+}
+
+/** Keys currently held by the memory driver (tests / diagnostics). */
+export function listMemoryObjects(): string[] {
+  return [...memoryObjects.keys()];
+}
+
+/** Drop every object held by the memory driver (tests). */
+export function clearMemoryObjects(): void {
+  memoryObjects.clear();
 }
 
 /** Reset cached client (tests / scripts that reload env). */

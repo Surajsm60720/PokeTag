@@ -72,6 +72,18 @@ npm run clear:demo   # remove demos + their storage objects
 npm test
 ```
 
+Covers both workspaces:
+
+- **`packages/save-format`** — detection and conversion, run against generated
+  fixtures (`npm run fixtures`) for `.sav` / `.dsv` / `.srm`: every fixture
+  round-trips byte for byte, and conversion never mutates its input. Fixtures are
+  synthetic and gitignored — no real save data is ever committed.
+- **`apps/web`** — the vault itself: upload→download byte identity, duplicate by
+  SHA-256, the concurrent-upload race, version history/restore, shared
+  storage-key safety, and the parse job's claim/retry/stale-recovery logic. It
+  runs against a throwaway SQLite file and an in-process storage driver, so it
+  needs no Docker, no MinIO and no dev data.
+
 Verified Phase 1 flow: upload → SHA-256 duplicate reject → download original (byte-identical) → convert to `.dsv` with ROM filename helper.
 
 ## Integrity
