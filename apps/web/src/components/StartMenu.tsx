@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 
 const ITEMS = [
   { href: "/", label: "SHELF" },
@@ -10,6 +11,19 @@ const ITEMS = [
 
 export function StartMenu() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  async function logout() {
+    setLoggingOut(true);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      router.replace("/login");
+      router.refresh();
+    } finally {
+      setLoggingOut(false);
+    }
+  }
 
   return (
     <nav className="start-menu" aria-label="Start menu">
@@ -28,6 +42,16 @@ export function StartMenu() {
             </li>
           );
         })}
+        <li>
+          <button
+            type="button"
+            className="start-menu__logout"
+            onClick={logout}
+            disabled={loggingOut}
+          >
+            {loggingOut ? "…" : "LOG OUT"}
+          </button>
+        </li>
       </ul>
       <p className="start-menu__foot">
         Fan project. Not affiliated with Nintendo, Game Freak, or The Pokémon

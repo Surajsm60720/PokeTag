@@ -1,6 +1,6 @@
 import { detectSave, parseSave, type DetectionResult } from "@poketag/save-format";
 import { getDb, type SaveVersionRow } from "./db";
-import { getObject } from "./minio";
+import { getObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
 import { saveParsedSnapshot } from "./snapshots";
 

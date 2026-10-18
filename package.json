@@ -11,7 +11,12 @@
     "build": "npm run build -w @poketag/save-format && npm run build -w @poketag/web",
     "test": "npm run test -w @poketag/save-format",
     "lint": "npm run lint -w @poketag/web",
-    "seed:demo": "NODE_OPTIONS='--experimental-sqlite --experimental-strip-types' node --experimental-strip-types apps/web/scripts/seed-demo.ts"
+    "seed:demo": "NODE_OPTIONS='--experimental-sqlite --experimental-strip-types' node --experimental-strip-types apps/web/scripts/seed-demo.ts",
+    "clear:demo": "NODE_OPTIONS='--experimental-sqlite --experimental-strip-types' node --experimental-strip-types apps/web/scripts/clear-demo.ts",
+    "storage:check": "NODE_OPTIONS='--experimental-strip-types' node --experimental-strip-types apps/web/scripts/storage-check.ts",
+    "storage:dummy": "NODE_OPTIONS='--experimental-strip-types' node --experimental-strip-types apps/web/scripts/r2-dummy-upload.ts",
+    "auth:hash": "NODE_OPTIONS='--experimental-strip-types' node --experimental-strip-types apps/web/scripts/hash-password.ts",
+    "smoke:vault": "NODE_OPTIONS='--experimental-strip-types' node --experimental-strip-types apps/web/scripts/smoke-vault.ts"
   },
   "engines": {
     "node": ">=20"

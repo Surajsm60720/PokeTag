@@ -3,15 +3,20 @@
  *
  *   npm run seed:demo
  *
- * Requires MinIO: docker compose up -d
+ * Requires object storage: local MinIO (docker compose up -d) or R2 via .env.local
  */
 import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DatabaseSync } from "node:sqlite";
-import * as Minio from "minio";
 import { buildDemoSnapshot } from "../src/lib/demo-parsed.ts";
+import {
+  describeStorage,
+  ensureBucket,
+  putObject,
+  resetStorageClient,
+} from "../src/lib/storage.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(__dirname, "..");
@@ -37,6 +42,7 @@ function loadEnvFile(filePath: string) {
 
 loadEnvFile(path.join(webRoot, ".env.local"));
 loadEnvFile(path.join(webRoot, "../../.env"));
+resetStorageClient();
 
 const GBA = 0x20000;
 const DS = 0x80000;
@@ -536,26 +542,16 @@ async function main() {
     );
   `);
 
-  const bucket = process.env.MINIO_BUCKET || "poketag-saves";
-  const minio = new Minio.Client({
-    endPoint: process.env.MINIO_ENDPOINT || "127.0.0.1",
-    port: Number(process.env.MINIO_PORT || 9000),
-    useSSL: process.env.MINIO_USE_SSL === "true",
-    accessKey: process.env.MINIO_ACCESS_KEY || "poketag",
-    secretKey: process.env.MINIO_SECRET_KEY || "poketagsecret",
-  });
-
   console.log(`DB: ${dbPath}`);
-  console.log(
-    `MinIO: ${process.env.MINIO_ENDPOINT || "127.0.0.1"}:${process.env.MINIO_PORT || 9000}/${bucket}`
-  );
+  console.log(`Storage: ${describeStorage()}`);
 
   try {
-    const exists = await minio.bucketExists(bucket);
-    if (!exists) await minio.makeBucket(bucket, "us-east-1");
+    await ensureBucket();
   } catch (err) {
     console.error(
-      "\nMinIO is not reachable. Start it first:\n  docker compose up -d\n"
+      "\nObject storage is not reachable.\n" +
+        "  Local: docker compose up -d\n" +
+        "  R2:    set STORAGE_DRIVER=r2 + R2_* in apps/web/.env.local (docs/storage.md)\n"
     );
     throw err;
   }
@@ -603,9 +599,7 @@ async function main() {
         baseTime + i * 3600_000 + (v + 1) * 600_000
       ).toISOString();
 
-      await minio.putObject(bucket, storageKey, data, data.length, {
-        "Content-Type": "application/octet-stream",
-      });
+      await putObject(storageKey, data);
 
       db.prepare(
         `INSERT INTO save_versions (

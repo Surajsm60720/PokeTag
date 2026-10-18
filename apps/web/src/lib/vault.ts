@@ -2,7 +2,7 @@ import { detectSave, type DetectionResult } from "@poketag/save-format";
 import { createHash } from "crypto";
 import { v4 as uuid } from "uuid";
 import { getDb, type ParseStatus, type SaveVersionRow } from "./db";
-import { deleteObject, getObject, putObject } from "./minio";
+import { deleteObject, getObject, putObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
 import { queueParseVersion } from "./parse-job";
 import {
