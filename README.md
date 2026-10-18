@@ -7,14 +7,14 @@ Companion docs: [Design Document](docs/design.md), [PRD](docs/prd.md).
 ## Stack
 
 - **Web + API:** Next.js (TypeScript) App Router
-- **Metadata:** SQLite via Node's built-in `node:sqlite`
+- **Metadata:** libSQL (`@libsql/client`) — local SQLite file or [Turso](docs/turso.md) for Vercel
 - **Object storage:** MinIO (Docker, local) or Cloudflare R2 (cloud) — see [docs/storage.md](docs/storage.md)
 - **Format helpers:** `@poketag/save-format` (detect + `.dsv` / `.sav` / `.srm` convert)
 
 ## Requirements
 
-- Node.js 22+ (uses built-in `node:sqlite`; scripts pass `--experimental-sqlite`)
-- Docker (for MinIO)
+- Node.js 20+
+- Docker (for local MinIO; optional if using R2)
 
 ## Quick start
 

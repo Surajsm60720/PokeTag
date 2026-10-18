@@ -4,35 +4,41 @@ import { getObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
 import { saveParsedSnapshot } from "./snapshots";
 
-function setParseStatus(
+async function setParseStatus(
   versionId: string,
   status: "pending" | "running" | "done" | "failed",
   error = ""
-): void {
-  const db = getDb();
+): Promise<void> {
+  const db = await getDb();
   const parsedAt =
     status === "done" || status === "failed" ? new Date().toISOString() : null;
-  db.prepare(
-    `UPDATE save_versions
+  await db
+    .prepare(
+      `UPDATE save_versions
      SET parse_status = ?, parse_error = ?, parsed_at = COALESCE(?, parsed_at)
      WHERE id = ?`
-  ).run(status, error, parsedAt, versionId);
+    )
+    .run(status, error, parsedAt, versionId);
 }
 
-function loadVersion(versionId: string): SaveVersionRow | undefined {
-  return getDb()
+async function loadVersion(
+  versionId: string
+): Promise<SaveVersionRow | undefined> {
+  return (await (
+    await getDb()
+  )
     .prepare(`SELECT * FROM save_versions WHERE id = ?`)
-    .get(versionId) as unknown as SaveVersionRow | undefined;
+    .get(versionId)) as unknown as SaveVersionRow | undefined;
 }
 
 /**
  * Async parse for one version. Never deletes storage on failure.
  */
 export async function parseVersion(versionId: string): Promise<void> {
-  const version = loadVersion(versionId);
+  const version = await loadVersion(versionId);
   if (!version) return;
 
-  setParseStatus(versionId, "running");
+  await setParseStatus(versionId, "running");
 
   try {
     const bytes = await getObject(version.storage_key);
@@ -73,11 +79,11 @@ export async function parseVersion(versionId: string): Promise<void> {
         note: "",
       },
     };
-    saveParsedSnapshot(snapshot);
-    setParseStatus(versionId, "done");
+    await saveParsedSnapshot(snapshot);
+    await setParseStatus(versionId, "done");
   } catch (err) {
     const message = err instanceof Error ? err.message : "Parse failed";
-    setParseStatus(versionId, "failed", message);
+    await setParseStatus(versionId, "failed", message);
   }
 }
 

@@ -38,7 +38,8 @@ export async function GET(request: Request) {
     }
 
     if (deviceLabel) {
-      getDb()
+      const db = await getDb();
+      await db
         .prepare(
           `INSERT INTO device_state (device_label, slot_id, last_downloaded_version_id)
            VALUES (?, ?, ?)

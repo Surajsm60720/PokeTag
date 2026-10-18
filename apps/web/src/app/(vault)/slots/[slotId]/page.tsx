@@ -4,6 +4,7 @@ import type { DetectionResult } from "@poketag/save-format";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function parseDetection(json: string): Partial<DetectionResult> {
   try {
@@ -19,12 +20,13 @@ export default async function SlotPage({
   params: Promise<{ slotId: string }>;
 }) {
   const { slotId } = await params;
-  const slot = getSlot(slotId);
+  const slot = await getSlot(slotId);
   if (!slot) notFound();
 
-  const snapshot = getSlotSnapshot(slotId);
+  const snapshot = await getSlotSnapshot(slotId);
+  const versionRows = await listVersions(slotId);
 
-  const versions = listVersions(slotId).map((v) => {
+  const versions = versionRows.map((v) => {
     const detection = parseDetection(v.detection_json);
     return {
       id: v.id,

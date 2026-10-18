@@ -9,8 +9,8 @@ import { createHash, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DatabaseSync } from "node:sqlite";
 import { buildDemoSnapshot } from "../src/lib/demo-parsed.ts";
+import { describeDatabase, getDb } from "../src/lib/db.ts";
 import {
   describeStorage,
   ensureBucket,
@@ -451,13 +451,6 @@ const DEMOS = [
   },
 ];
 
-function resolveDbPath() {
-  const raw = process.env.DATABASE_URL ?? "file:../../data/poketag.sqlite";
-  const filePath = raw.startsWith("file:") ? raw.slice("file:".length) : raw;
-  if (path.isAbsolute(filePath)) return filePath;
-  return path.resolve(webRoot, filePath);
-}
-
 function sha256(data) {
   return createHash("sha256").update(data).digest("hex");
 }
@@ -486,63 +479,8 @@ function detectionJson(game, sizeBytes) {
 }
 
 async function main() {
-  const dbPath = resolveDbPath();
-  fs.mkdirSync(path.dirname(dbPath), { recursive: true });
-  const db = new DatabaseSync(dbPath);
-  db.exec("PRAGMA foreign_keys = ON;");
-
-  // Ensure tables exist (same schema as app migrate).
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS save_slots (
-      id TEXT PRIMARY KEY,
-      game_version TEXT NOT NULL,
-      generation INTEGER,
-      run_label TEXT NOT NULL DEFAULT '',
-      created_at TEXT NOT NULL,
-      current_version_id TEXT
-    );
-    CREATE TABLE IF NOT EXISTS save_versions (
-      id TEXT PRIMARY KEY,
-      slot_id TEXT NOT NULL,
-      parent_version_id TEXT,
-      storage_key TEXT NOT NULL,
-      sha256 TEXT NOT NULL,
-      size_bytes INTEGER NOT NULL,
-      original_filename TEXT NOT NULL,
-      source_format TEXT NOT NULL,
-      source_emulator TEXT NOT NULL DEFAULT '',
-      source_device TEXT NOT NULL DEFAULT '',
-      uploaded_at TEXT NOT NULL,
-      note TEXT NOT NULL DEFAULT '',
-      recognized INTEGER NOT NULL DEFAULT 0,
-      detection_json TEXT NOT NULL DEFAULT '{}',
-      FOREIGN KEY (slot_id) REFERENCES save_slots(id)
-    );
-    CREATE TABLE IF NOT EXISTS device_state (
-      device_label TEXT NOT NULL,
-      slot_id TEXT NOT NULL,
-      last_downloaded_version_id TEXT,
-      PRIMARY KEY (device_label, slot_id),
-      FOREIGN KEY (slot_id) REFERENCES save_slots(id)
-    );
-    CREATE TABLE IF NOT EXISTS parsed_snapshots (
-      version_id TEXT PRIMARY KEY,
-      trainer_json TEXT NOT NULL DEFAULT '{}',
-      party_json TEXT NOT NULL DEFAULT '[]',
-      boxes_json TEXT NOT NULL DEFAULT '[]',
-      dex_json TEXT NOT NULL DEFAULT '{}',
-      badges_json TEXT NOT NULL DEFAULT '[]',
-      location TEXT NOT NULL DEFAULT '',
-      location_map_id INTEGER,
-      play_time_seconds INTEGER NOT NULL DEFAULT 0,
-      parser_version TEXT NOT NULL DEFAULT '',
-      is_demo INTEGER NOT NULL DEFAULT 0,
-      created_at TEXT NOT NULL,
-      FOREIGN KEY (version_id) REFERENCES save_versions(id)
-    );
-  `);
-
-  console.log(`DB: ${dbPath}`);
+  const db = await getDb();
+  console.log(`DB: ${describeDatabase()}`);
   console.log(`Storage: ${describeStorage()}`);
 
   try {
@@ -558,24 +496,22 @@ async function main() {
 
   const demoIds = DEMOS.map((d) => d.id);
   const ph = demoIds.map(() => "?").join(",");
-  const versionIds = db
-    .prepare(
-      `SELECT id FROM save_versions WHERE slot_id IN (${ph})`
-    )
-    .all(...demoIds) as Array<{ id: string }>;
+  const versionIds = await db
+    .prepare(`SELECT id FROM save_versions WHERE slot_id IN (${ph})`)
+    .all(...demoIds);
   if (versionIds.length) {
     const vph = versionIds.map(() => "?").join(",");
-    db.prepare(
-      `DELETE FROM parsed_snapshots WHERE version_id IN (${vph})`
-    ).run(...versionIds.map((v) => v.id));
+    await db
+      .prepare(`DELETE FROM parsed_snapshots WHERE version_id IN (${vph})`)
+      .run(...versionIds.map((v) => v.id as string));
   }
-  db.prepare(`DELETE FROM save_versions WHERE slot_id IN (${ph})`).run(
-    ...demoIds
-  );
-  db.prepare(`DELETE FROM device_state WHERE slot_id IN (${ph})`).run(
-    ...demoIds
-  );
-  db.prepare(`DELETE FROM save_slots WHERE id IN (${ph})`).run(...demoIds);
+  await db
+    .prepare(`DELETE FROM save_versions WHERE slot_id IN (${ph})`)
+    .run(...demoIds);
+  await db
+    .prepare(`DELETE FROM device_state WHERE slot_id IN (${ph})`)
+    .run(...demoIds);
+  await db.prepare(`DELETE FROM save_slots WHERE id IN (${ph})`).run(...demoIds);
 
   const baseTime = Date.now() - DEMOS.length * 3600_000;
 
@@ -585,10 +521,18 @@ async function main() {
     let currentVersionId = null;
     let parentVersionId = null;
 
-    db.prepare(
-      `INSERT INTO save_slots (id, game_version, generation, run_label, created_at, current_version_id)
+    await db
+      .prepare(
+        `INSERT INTO save_slots (id, game_version, generation, run_label, created_at, current_version_id)
        VALUES (?, ?, ?, ?, ?, NULL)`
-    ).run(game.id, game.gameVersion, game.generation, game.runLabel, createdAt);
+      )
+      .run(
+        game.id,
+        game.gameVersion,
+        game.generation,
+        game.runLabel,
+        createdAt
+      );
 
     for (let v = 0; v < game.versions; v++) {
       const versionId = `${game.id}-v${v + 1}`;
@@ -601,59 +545,63 @@ async function main() {
 
       await putObject(storageKey, data);
 
-      db.prepare(
-        `INSERT INTO save_versions (
+      await db
+        .prepare(
+          `INSERT INTO save_versions (
           id, slot_id, parent_version_id, storage_key, sha256, size_bytes,
           original_filename, source_format, source_emulator, source_device,
           uploaded_at, note, recognized, detection_json,
           parse_status, parse_error, parsed_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, 'done', '', ?)`
-      ).run(
-        versionId,
-        game.id,
-        parentVersionId,
-        storageKey,
-        hash,
-        data.length,
-        game.filename,
-        "sav",
-        game.emulator,
-        game.device,
-        uploadedAt,
-        v === 0 ? game.note : `Autosave checkpoint ${v + 1}`,
-        detectionJson(game, data.length),
-        uploadedAt
-      );
+        )
+        .run(
+          versionId,
+          game.id,
+          parentVersionId,
+          storageKey,
+          hash,
+          data.length,
+          game.filename,
+          "sav",
+          game.emulator,
+          game.device,
+          uploadedAt,
+          v === 0 ? game.note : `Autosave checkpoint ${v + 1}`,
+          detectionJson(game, data.length),
+          uploadedAt
+        );
 
       parentVersionId = versionId;
       currentVersionId = versionId;
     }
 
-    db.prepare(
-      `UPDATE save_slots SET current_version_id = ? WHERE id = ?`
-    ).run(currentVersionId, game.id);
+    await db
+      .prepare(`UPDATE save_slots SET current_version_id = ? WHERE id = ?`)
+      .run(currentVersionId, game.id);
 
     if (currentVersionId) {
       const snap = buildDemoSnapshot(game.gameVersion, currentVersionId);
       if (snap) {
-        db.prepare(
-          `INSERT INTO parsed_snapshots (
+        await db
+          .prepare(
+            `INSERT INTO parsed_snapshots (
             version_id, trainer_json, party_json, boxes_json, dex_json, badges_json,
             location, location_map_id, play_time_seconds, parser_version, is_demo, created_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`
-        ).run(
-          snap.versionId,
-          JSON.stringify(snap.trainer),
-          JSON.stringify(snap.party),
-          JSON.stringify(snap.boxes),
-          JSON.stringify(snap.dex),
-          JSON.stringify(snap.badges),
-          snap.location,
-          snap.locationMapId,
-          snap.playTimeSeconds,
-          snap.parserVersion,
-          new Date().toISOString()
-        );
+          )
+          .run(
+            snap.versionId,
+            JSON.stringify(snap.trainer),
+            JSON.stringify(snap.party),
+            JSON.stringify(snap.boxes),
+            JSON.stringify(snap.dex),
+            JSON.stringify(snap.badges),
+            snap.location,
+            snap.locationMapId,
+            snap.playTimeSeconds,
+            snap.parserVersion,
+            new Date().toISOString()
+          );
       }
     }
 

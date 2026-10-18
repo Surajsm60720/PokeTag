@@ -3,7 +3,7 @@ import path from "path";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@poketag/save-format"],
-  serverExternalPackages: ["minio"],
+  serverExternalPackages: ["minio", "@libsql/client"],
   outputFileTracingRoot: path.join(__dirname, "../../"),
 };
 

@@ -14,12 +14,12 @@ export async function GET(
 ) {
   try {
     const { slotId } = await context.params;
-    const slot = getSlot(slotId);
+    const slot = await getSlot(slotId);
     if (!slot) {
       return NextResponse.json({ error: "Slot not found." }, { status: 404 });
     }
-    const snapshot = getSlotSnapshot(slotId);
-    const versions = listVersions(slotId).map((v) => ({
+    const snapshot = await getSlotSnapshot(slotId);
+    const versions = (await listVersions(slotId)).map((v) => ({
       id: v.id,
       slotId: v.slot_id,
       parentVersionId: v.parent_version_id,

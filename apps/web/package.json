@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS=--experimental-sqlite next dev --turbopack",
-    "build": "NODE_OPTIONS=--experimental-sqlite next build",
-    "start": "NODE_OPTIONS=--experimental-sqlite next start",
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "@libsql/client": "^0.14.0",
     "@poketag/save-format": "*",
     "minio": "^8.0.5",
     "next": "15.5.28",

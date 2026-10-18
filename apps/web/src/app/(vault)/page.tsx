@@ -3,9 +3,10 @@ import { Shelf } from "@/components/Shelf";
 import { listSlots } from "@/lib/vault";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-export default function HomePage() {
-  const slots = listSlots();
+export default async function HomePage() {
+  const slots = await listSlots();
   const copy =
     slots.length === 0
       ? "The shelf is empty. Open NEW RUN to start tracking a save."

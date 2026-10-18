@@ -76,46 +76,51 @@ function rowToSnapshot(
   };
 }
 
-export function saveParsedSnapshot(snapshot: ParsedSnapshot): void {
-  const db = getDb();
+export async function saveParsedSnapshot(
+  snapshot: ParsedSnapshot
+): Promise<void> {
+  const db = await getDb();
   const now = new Date().toISOString();
-  db.prepare(
-    `INSERT OR REPLACE INTO parsed_snapshots (
+  await db
+    .prepare(
+      `INSERT OR REPLACE INTO parsed_snapshots (
       version_id, trainer_json, party_json, boxes_json, dex_json, badges_json,
       location, location_map_id, play_time_seconds, parser_version, is_demo, created_at,
       inventory_json, progress_json
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  ).run(
-    snapshot.versionId,
-    JSON.stringify(snapshot.trainer),
-    JSON.stringify(snapshot.party),
-    JSON.stringify(snapshot.boxes),
-    JSON.stringify(snapshot.dex),
-    JSON.stringify(snapshot.badges),
-    snapshot.location,
-    snapshot.locationMapId,
-    snapshot.playTimeSeconds,
-    snapshot.parserVersion,
-    snapshot.isDemo ? 1 : 0,
-    now,
-    JSON.stringify(snapshot.inventory ?? emptyInventory()),
-    JSON.stringify(snapshot.progress ?? emptyProgress())
-  );
+    )
+    .run(
+      snapshot.versionId,
+      JSON.stringify(snapshot.trainer),
+      JSON.stringify(snapshot.party),
+      JSON.stringify(snapshot.boxes),
+      JSON.stringify(snapshot.dex),
+      JSON.stringify(snapshot.badges),
+      snapshot.location,
+      snapshot.locationMapId,
+      snapshot.playTimeSeconds,
+      snapshot.parserVersion,
+      snapshot.isDemo ? 1 : 0,
+      now,
+      JSON.stringify(snapshot.inventory ?? emptyInventory()),
+      JSON.stringify(snapshot.progress ?? emptyProgress())
+    );
 }
 
-export function getParsedSnapshot(
+export async function getParsedSnapshot(
   versionId: string | null | undefined,
   gameVersion: string
-): ParsedSnapshot | null {
+): Promise<ParsedSnapshot | null> {
   if (!versionId) return null;
 
-  const row = getDb()
+  const row = await (
+    await getDb()
+  )
     .prepare(`SELECT * FROM parsed_snapshots WHERE version_id = ?`)
-    .get(versionId) as unknown as ParsedSnapshotRow | undefined;
+    .get(versionId) as ParsedSnapshotRow | undefined;
 
   if (row) return rowToSnapshot(row, gameVersion);
 
-  // Demo slots: synthesize if seed has not written a row yet.
   if (versionId.startsWith("demo-")) {
     return buildDemoSnapshot(gameVersion, versionId);
   }

@@ -7,7 +7,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DatabaseSync } from "node:sqlite";
+import { describeDatabase, getDb } from "../src/lib/db.ts";
 import {
   deleteObject,
   describeStorage,
@@ -40,42 +40,30 @@ loadEnvFile(path.join(webRoot, ".env.local"));
 loadEnvFile(path.join(webRoot, "../../.env"));
 resetStorageClient();
 
-function resolveDbPath(): string {
-  const raw = process.env.DATABASE_URL || "file:../../data/poketag.sqlite";
-  const file = raw.startsWith("file:") ? raw.slice("file:".length) : raw;
-  return path.isAbsolute(file) ? file : path.resolve(webRoot, file);
-}
-
 async function main() {
-  const dbPath = resolveDbPath();
-  if (!fs.existsSync(dbPath)) {
-    console.log(`No database at ${dbPath} — nothing to clear.`);
-    return;
-  }
-
-  const db = new DatabaseSync(dbPath);
-  const slots = db
-    .prepare(
-      `SELECT id FROM save_slots WHERE id LIKE 'demo-%' ORDER BY id`
-    )
-    .all() as Array<{ id: string }>;
+  const db = await getDb();
+  const slots = await db
+    .prepare(`SELECT id FROM save_slots WHERE id LIKE 'demo-%' ORDER BY id`)
+    .all<{ id: string }>();
 
   if (slots.length === 0) {
     console.log("No demo slots found. Shelf is already clean.");
-    db.close();
     return;
   }
 
   const slotIds = slots.map((s) => s.id);
   const ph = slotIds.map(() => "?").join(",");
-  const versions = db
+  const versions = await db
     .prepare(
       `SELECT id, storage_key FROM save_versions WHERE slot_id IN (${ph})`
     )
-    .all(...slotIds) as Array<{ id: string; storage_key: string }>;
+    .all<{ id: string; storage_key: string }>(...slotIds);
 
+  console.log(`DB: ${describeDatabase()}`);
   console.log(`Storage: ${describeStorage()}`);
-  console.log(`Removing ${slotIds.length} demo slots (${versions.length} versions)…`);
+  console.log(
+    `Removing ${slotIds.length} demo slots (${versions.length} versions)…`
+  );
 
   const keys = [...new Set(versions.map((v) => v.storage_key))];
   let storageDeleted = 0;
@@ -91,33 +79,26 @@ async function main() {
     }
   }
 
-  db.exec("BEGIN");
-  try {
-    if (versions.length) {
-      const vph = versions.map(() => "?").join(",");
-      db.prepare(
-        `DELETE FROM parsed_snapshots WHERE version_id IN (${vph})`
-      ).run(...versions.map((v) => v.id));
-    }
-    db.prepare(`DELETE FROM device_state WHERE slot_id IN (${ph})`).run(
-      ...slotIds
-    );
-    db.prepare(`DELETE FROM save_versions WHERE slot_id IN (${ph})`).run(
-      ...slotIds
-    );
-    db.prepare(`DELETE FROM save_slots WHERE id IN (${ph})`).run(...slotIds);
-    db.exec("COMMIT");
-  } catch (err) {
-    db.exec("ROLLBACK");
-    db.close();
-    throw err;
+  if (versions.length) {
+    const vph = versions.map(() => "?").join(",");
+    await db
+      .prepare(`DELETE FROM parsed_snapshots WHERE version_id IN (${vph})`)
+      .run(...versions.map((v) => v.id));
   }
+  await db
+    .prepare(`DELETE FROM device_state WHERE slot_id IN (${ph})`)
+    .run(...slotIds);
+  await db
+    .prepare(`DELETE FROM save_versions WHERE slot_id IN (${ph})`)
+    .run(...slotIds);
+  await db.prepare(`DELETE FROM save_slots WHERE id IN (${ph})`).run(...slotIds);
 
-  db.close();
   console.log(
     `Done. Deleted ${slotIds.length} slots, ${storageDeleted}/${keys.length} storage objects.`
   );
-  console.log("Refresh http://localhost:3000 — empty shelf until you upload a real save.");
+  console.log(
+    "Refresh http://localhost:3000 — empty shelf until you upload a real save."
+  );
 }
 
 main().catch((err) => {

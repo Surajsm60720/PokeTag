@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 
 export async function GET() {
   try {
-    const slots = listSlots();
+    const slots = await listSlots();
     return NextResponse.json({ slots });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to list slots";

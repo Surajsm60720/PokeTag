@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     }
     const slotId = String(form.get("slotId") || "") || undefined;
     const buffer = Buffer.from(await file.arrayBuffer());
-    const preview = previewUpload(buffer, file.name, slotId);
+    const preview = await previewUpload(buffer, file.name, slotId);
     return NextResponse.json(preview);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Preview failed";

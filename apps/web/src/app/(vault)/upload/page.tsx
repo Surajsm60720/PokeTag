@@ -1,5 +1,7 @@
 import { UploadFlow } from "@/components/UploadFlow";
 
+export const runtime = "nodejs";
+
 export default async function UploadPage({
   searchParams,
 }: {
