@@ -16,7 +16,7 @@ export interface ConvertResult {
 
 function basenameWithoutExt(name: string): string {
   const base = name.replace(/^.*[/\\]/, "");
-  return base.replace(/\.(sav|dsv|srm|zip)$/i, "") || "save";
+  return base.replace(/\.(sav|dsv|srm|zip|np)$/i, "") || "save";
 }
 
 /**

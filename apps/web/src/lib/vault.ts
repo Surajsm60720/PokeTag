@@ -210,13 +210,14 @@ export interface PreviewResult {
 export async function previewUpload(
   data: Buffer,
   filename: string,
-  slotId?: string
+  slotId?: string,
+  hint?: string
 ): Promise<PreviewResult> {
   if (data.length > MAX_UPLOAD_BYTES) {
     throw new Error("File is too large. Max 32 MB.");
   }
   const hash = sha256(data);
-  const detection = detectSave(data, filename);
+  const detection = detectSave(data, filename, { hint });
   const existing = slotId ? await findVersionByHash(hash, slotId) : undefined;
   const matchingRuns =
     !slotId && detection.gameVersion !== "unknown"
@@ -254,7 +255,8 @@ export async function commitUpload(input: CommitUploadInput): Promise<{
   const preview = await previewUpload(
     input.data,
     input.filename,
-    input.slotId
+    input.slotId,
+    input.runLabel
   );
   if (
     preview.duplicate &&

@@ -82,23 +82,63 @@ export async function parseVersion(versionId: string): Promise<void> {
 
   try {
     const bytes = await getObject(version.storage_key);
-    let detection: DetectionResult;
-    try {
-      detection = JSON.parse(version.detection_json) as DetectionResult;
-    } catch {
-      detection = detectSave(bytes, version.original_filename);
-    }
-    if (!detection.recognized || detection.generation == null) {
-      detection = detectSave(bytes, version.original_filename);
-    }
-    if (!detection.recognized || detection.generation == null) {
+    const db = await getDb();
+    const slot = await db
+      .prepare(`SELECT run_label, game_version FROM save_slots WHERE id = ?`)
+      .get<{ run_label: string; game_version: string }>(version.slot_id);
+
+    // Always re-detect from bytes so parser upgrades (e.g. Gen 6 `main` sizes)
+    // heal older unrecognized uploads. Run label breaks X/Y ties.
+    const detection: DetectionResult = detectSave(
+      bytes,
+      version.original_filename,
+      { hint: slot?.run_label }
+    );
+
+    // Spin-offs (Pokkén) are recognized with generation null; main-series still
+    // needs a generation before parseSave can route.
+    const needsGeneration =
+      detection.gameVersion !== "pokkentournamentdx" &&
+      detection.generation == null;
+    if (!detection.recognized || needsGeneration) {
       throw new Error(
         detection.notes?.[0] ||
           "Unrecognized save — vaulted but not parseable."
       );
     }
 
+    await db
+      .prepare(
+        `UPDATE save_versions
+            SET detection_json = ?, recognized = ?, source_format = ?
+          WHERE id = ?`
+      )
+      .run(
+        JSON.stringify(detection),
+        detection.recognized ? 1 : 0,
+        detection.format,
+        versionId
+      );
     const parsed = parseSave(bytes, detection);
+    // Prefer the parser's resolved game (e.g. MyStatus says Y even if the
+    // run was labeled X) when the slot is still unknown or disagrees.
+    const resolvedGame = parsed.gameVersion || detection.gameVersion;
+    if (
+      resolvedGame &&
+      resolvedGame !== "unknown" &&
+      slot &&
+      slot.game_version !== resolvedGame
+    ) {
+      await db
+        .prepare(
+          `UPDATE save_slots SET game_version = ?, generation = ? WHERE id = ?`
+        )
+        .run(
+          resolvedGame,
+          detection.generation,
+          version.slot_id
+        );
+    }
     const snapshot: ParsedSnapshot = {
       versionId,
       gameVersion: parsed.gameVersion,

@@ -50,6 +50,32 @@ describe("detectSave", () => {
     assert.equal(result.recognized, false);
     assert.ok(result.notes.some((n) => n.includes("vaulted")));
   });
+
+  it("recognizes Citra/Azahar Gen 6 main by size", () => {
+    const data = Buffer.alloc(0x65600, 0);
+    const result = detectSave(data, "main");
+    assert.equal(result.recognized, true);
+    assert.equal(result.format, "main");
+    assert.equal(result.generation, 6);
+    assert.equal(result.gameVersion, "x");
+  });
+
+  it("reads Pokémon Y from the MyStatus game byte", () => {
+    const data = Buffer.alloc(0x65600, 0);
+    data[0x14004] = 25; // PKHeX GameVersion.Y
+    const result = detectSave(data, "main", { hint: "Pokemon X - Run 1" });
+    assert.equal(result.gameVersion, "y");
+    assert.equal(result.recognized, true);
+  });
+
+  it("recognizes Pokkén Tournament DX .np dumps", () => {
+    const data = Buffer.alloc(4096, 1);
+    const result = detectSave(data, "pokken.np");
+    assert.equal(result.recognized, true);
+    assert.equal(result.format, "np");
+    assert.equal(result.gameVersion, "pokkentournamentdx");
+    assert.equal(result.generation, null);
+  });
 });
 
 describe("convertSave", () => {

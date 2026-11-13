@@ -62,6 +62,7 @@ export function gameDisplayName(gameVersion: string, fallback?: string): string 
     legendsarceus: "Pokémon Legends: Arceus",
     scarlet: "Pokémon Scarlet",
     violet: "Pokémon Violet",
+    pokkentournamentdx: "Pokkén Tournament DX",
   };
   return names[gameVersion] ?? fallback ?? gameVersion;
 }

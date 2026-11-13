@@ -194,7 +194,7 @@ export function SlotDetail({
   async function forceDeleteVersion(versionId: string) {
     if (
       !window.confirm(
-        "Delete this version permanently? Other versions in this run stay."
+        "Delete this save version permanently?\n\nOther versions in this run stay. The stored file for this version is removed if nothing else uses it."
       )
     ) {
       return;
@@ -207,7 +207,7 @@ export function SlotDetail({
     const data = await res.json();
     setBusy(false);
     if (!res.ok) {
-      setMessage(data.error || "Delete failed.");
+      setMessage(data.error || "Could not delete that version.");
       return;
     }
     setMessage(data.message || "Version deleted.");
@@ -216,9 +216,10 @@ export function SlotDetail({
   }
 
   async function forceDeleteRun() {
+    const label = slot.runLabel || slot.label || "this run";
     if (
       !window.confirm(
-        "Delete this entire run and all its versions? This cannot be undone."
+        `Delete “${label}” and every save version in it?\n\nThis removes the run from the shelf and deletes the stored files. It cannot be undone.`
       )
     ) {
       return;
@@ -228,7 +229,7 @@ export function SlotDetail({
     const data = await res.json();
     setBusy(false);
     if (!res.ok) {
-      setMessage(data.error || "Delete failed.");
+      setMessage(data.error || "Could not delete this run.");
       return;
     }
     router.push("/");
@@ -263,6 +264,23 @@ export function SlotDetail({
         versionCount={versions.length}
         snapshot={snapshot}
       />
+
+      <div className="run-actions btn-row">
+        <Link className="btn" href="/">
+          Back to shelf
+        </Link>
+        <Link className="btn" href={`/upload?slotId=${slot.id}`}>
+          Add version
+        </Link>
+        <button
+          type="button"
+          className="btn btn-danger"
+          disabled={busy}
+          onClick={() => void forceDeleteRun()}
+        >
+          Delete this run &amp; saves
+        </button>
+      </div>
 
       <nav className="dash-tabs" aria-label="Dashboard sections">
         {tabs.map((t) => (
@@ -375,14 +393,6 @@ export function SlotDetail({
             <Link className="btn" href="/">
               Shelf
             </Link>
-            <button
-              type="button"
-              className="btn"
-              disabled={busy}
-              onClick={() => void forceDeleteRun()}
-            >
-              Delete run
-            </button>
           </div>
         </PixelPanel>
       ) : null}
@@ -465,11 +475,11 @@ export function SlotDetail({
                       )}
                       <button
                         type="button"
-                        className="btn"
+                        className="btn btn-danger"
                         disabled={busy}
                         onClick={() => void forceDeleteVersion(v.id)}
                       >
-                        Delete
+                        Delete this version
                       </button>
                     </div>
                   </div>

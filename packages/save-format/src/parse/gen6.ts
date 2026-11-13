@@ -1,24 +1,60 @@
 /**
- * Generation VI save parser (XY / ORAS) via BEEF block scan + PK6-sized slots.
+ * Generation VI save parser (XY / ORAS) using PKHeX block offsets + PK6 crypto.
  */
 
 import type { DetectionResult, GameVersion } from "../types.js";
 import { badgesFromBitmask, emptyBadges } from "./badges.js";
-import { findBeefBlocks, validateBeefBlock } from "./beef.js";
-import { speciesName } from "./species.js";
+import { parsePk6, PK6_PARTY, PK6_STORED } from "./pk6.js";
 import type { ParsedPokemon, ParsedSave } from "./types.js";
 import {
   baseSave,
   compactParty,
   emptyDex,
   makeBoxes,
-  pokemonExtras,
   readU16LE,
   readU32LE,
 } from "./util.js";
 
-const PK6_SIZE = 0x104; // 260 boxed
-const PK6_PARTY = 0x118; // 280 party
+/** PKHeX GameVersion bytes stored in MyStatus. */
+const GAME_BYTE: Record<number, GameVersion> = {
+  24: "x",
+  25: "y",
+  26: "alphasapphire",
+  27: "omegaruby",
+};
+
+interface Gen6Layout {
+  myStatus: number;
+  misc: number;
+  money: number;
+  badges: number;
+  playTime: number;
+  party: number;
+  box: number;
+  boxCount: number;
+}
+
+const XY: Gen6Layout = {
+  myStatus: 0x14000,
+  misc: 0x4200,
+  money: 0x4208,
+  badges: 0x420c,
+  playTime: 0x1800,
+  party: 0x14200,
+  box: 0x22600,
+  boxCount: 31,
+};
+
+const ORAS: Gen6Layout = {
+  myStatus: 0x14000,
+  misc: 0x4200,
+  money: 0x4208,
+  badges: 0x420c,
+  playTime: 0x1800,
+  party: 0x14200,
+  box: 0x33000,
+  boxCount: 31,
+};
 
 function decodeUtf16z(data: Uint8Array, off: number, maxChars: number): string {
   let s = "";
@@ -30,104 +66,83 @@ function decodeUtf16z(data: Uint8Array, off: number, maxChars: number): string {
   return s;
 }
 
-/** Minimal PK6 read: species at 0x08 after decrypt is complex — use plaintext demo path. */
-function parsePk6Shallow(raw: Uint8Array, slot: number): ParsedPokemon | null {
-  if (raw.length < 0x10) return null;
-  // Encrypted PK6: species is inside shuffled blocks. For save scanning we accept
-  // zeroed slots as empty; non-zero checksum at 0x06 indicates occupancy.
-  const checksum = readU16LE(raw, 0x06);
-  const encryptionConstant = readU32LE(raw, 0);
-  if (encryptionConstant === 0 && checksum === 0) return null;
-  // Without full PK6 crypto, expose placeholder identity when EC present.
-  const speciesId = readU16LE(raw, 0x08) || 0;
-  if (speciesId === 0 || speciesId > 721) {
-    return {
-      slot,
-      speciesId: speciesId || 0,
-      speciesName: speciesId ? speciesName(speciesId) : "Unknown",
-      nickname: "",
-      level: raw.length >= PK6_PARTY ? raw[0xec] ?? 1 : 1,
-      currentHp: 0,
-      maxHp: 0,
-      gender: "U",
-      shiny: false,
-      ability: "",
-      nature: "",
-      heldItem: null,
-      moves: [],
-      types: [],
-      friendship: 0,
-      ...pokemonExtras(),
-    };
+function layoutFor(game: GameVersion, size: number): Gen6Layout {
+  if (game === "omegaruby" || game === "alphasapphire" || size === 0x76000) {
+    return ORAS;
   }
-  return {
-    slot,
-    speciesId,
-    speciesName: speciesName(speciesId),
-    nickname: decodeUtf16z(raw, 0x40, 12) || speciesName(speciesId),
-    level: raw.length >= PK6_PARTY ? raw[0xec] ?? 1 : 1,
-    currentHp: 0,
-    maxHp: 0,
-    gender: "U",
-    shiny: false,
-    ability: "",
-    nature: "",
-    heldItem: null,
-    moves: [],
-    types: [],
-    friendship: raw[0xca] ?? 0,
-    ...pokemonExtras(),
-  };
+  return XY;
+}
+
+function resolveGame(
+  bytes: Uint8Array,
+  detection: DetectionResult,
+  layout: Gen6Layout
+): GameVersion {
+  const gameByte = bytes[layout.myStatus + 0x04];
+  if (gameByte != null && GAME_BYTE[gameByte]) {
+    return GAME_BYTE[gameByte]!;
+  }
+  if (detection.gameVersion !== "unknown") return detection.gameVersion;
+  return sizeHintGame(bytes.length);
+}
+
+function sizeHintGame(size: number): GameVersion {
+  if (size === 0x76000) return "omegaruby";
+  return "x";
+}
+
+function readPlayTimeSeconds(bytes: Uint8Array, off: number): number {
+  if (off + 4 > bytes.length) return 0;
+  const hours = readU16LE(bytes, off);
+  const minutes = bytes[off + 2] ?? 0;
+  const seconds = bytes[off + 3] ?? 0;
+  return hours * 3600 + minutes * 60 + seconds;
 }
 
 export function parseGen6(
   bytes: Uint8Array,
   detection: DetectionResult
 ): ParsedSave {
-  const game = detection.gameVersion === "unknown" ? "x" : detection.gameVersion;
-  const blocks = findBeefBlocks(bytes);
-  const bad = blocks.find((b) => !validateBeefBlock(b));
-  if (blocks.length > 0 && bad && bad.data.length > 2) {
-    // Only throw when a clearly checksummed block fails.
-    const stored =
-      bad.data[bad.data.length - 2]! | (bad.data[bad.data.length - 1]! << 8);
-    if (stored !== 0) {
-      throw new Error("Gen 6 BEEF block checksum validation failed");
-    }
-  }
+  const provisional =
+    detection.gameVersion === "unknown"
+      ? sizeHintGame(bytes.length)
+      : detection.gameVersion;
+  const layout = layoutFor(provisional, bytes.length);
+  const game = resolveGame(bytes, detection, layout);
 
-  // Trainer info lives at fixed offsets in raw XY/ORAS saves (community docs).
-  const isOras = game === "omegaruby" || game === "alphasapphire";
-  const trainerOff = isOras ? 0x14000 : 0x14000;
+  const status = layout.myStatus;
+  const tid = status + 2 <= bytes.length ? readU16LE(bytes, status) : 0;
+  const sid = status + 4 <= bytes.length ? readU16LE(bytes, status + 2) : 0;
+  const genderByte = bytes[status + 5] ?? 0;
   const name =
-    trainerOff + 16 < bytes.length
-      ? decodeUtf16z(bytes, trainerOff, 12)
+    status + 0x48 + 24 <= bytes.length
+      ? decodeUtf16z(bytes, status + 0x48, 12)
       : "";
-  const tid = trainerOff + 0x10 + 2 < bytes.length ? readU16LE(bytes, trainerOff + 0x10) : 0;
-  const sid = trainerOff + 0x12 + 2 < bytes.length ? readU16LE(bytes, trainerOff + 0x12) : 0;
-  const moneyOff = isOras ? 0x4200 : 0x4208;
-  const money = moneyOff + 4 < bytes.length ? readU32LE(bytes, moneyOff) : 0;
-  const badgeOff = isOras ? 0x4210 : 0x4214;
-  const badgeMask = badgeOff < bytes.length ? bytes[badgeOff]! : 0;
+  const money =
+    layout.money + 4 <= bytes.length ? readU32LE(bytes, layout.money) : 0;
+  const badgeMask =
+    layout.badges < bytes.length ? (bytes[layout.badges] ?? 0) : 0;
 
-  const partyOff = isOras ? 0x14200 : 0x14200;
+  const partyCountOff = layout.party + 6 * PK6_PARTY;
+  const partyCount =
+    partyCountOff + 4 <= bytes.length
+      ? Math.min(6, readU32LE(bytes, partyCountOff))
+      : 6;
+
   const partySlots: Array<ParsedPokemon | null> = [];
-  for (let i = 0; i < 6; i++) {
-    const base = partyOff + i * PK6_PARTY;
-    if (base + PK6_SIZE > bytes.length) break;
-    const mon = parsePk6Shallow(bytes.subarray(base, base + PK6_PARTY), i);
-    if (mon && (mon.speciesId > 0 || readU32LE(bytes, base) !== 0)) {
-      if (mon.speciesId > 0) partySlots.push(mon);
-    }
+  for (let i = 0; i < partyCount; i++) {
+    const base = layout.party + i * PK6_PARTY;
+    if (base + PK6_PARTY > bytes.length) break;
+    const mon = parsePk6(bytes.subarray(base, base + PK6_PARTY), i);
+    if (mon) partySlots.push(mon);
   }
 
-  const boxes = makeBoxes(31, 30);
-  const boxOff = isOras ? 0x1a000 : 0x1a000;
-  for (let i = 0; i < 31 * 30; i++) {
-    const off = boxOff + i * PK6_SIZE;
-    if (off + PK6_SIZE > bytes.length) break;
-    const mon = parsePk6Shallow(bytes.subarray(off, off + PK6_SIZE), i % 30);
-    if (mon && mon.speciesId > 0) {
+  const boxes = makeBoxes(layout.boxCount, 30);
+  for (let i = 0; i < layout.boxCount * 30; i++) {
+    const off = layout.box + i * PK6_STORED;
+    if (off + PK6_STORED > bytes.length) break;
+    const mon = parsePk6(bytes.subarray(off, off + PK6_STORED), i % 30);
+    if (mon) {
       boxes[Math.floor(i / 30)]!.pokemon[i % 30] = mon;
     }
   }
@@ -138,12 +153,14 @@ export function parseGen6(
       trainerId: tid,
       secretId: sid,
       money,
-      gender: "M",
+      gender: genderByte === 1 ? "F" : "M",
     },
     party: compactParty(partySlots),
     boxes,
     dex: emptyDex(721),
-    badges: badgeMask ? badgesFromBitmask(game, badgeMask) : emptyBadges(game),
-    playTimeSeconds: 0,
+    badges: badgeMask
+      ? badgesFromBitmask(game, badgeMask)
+      : emptyBadges(game),
+    playTimeSeconds: readPlayTimeSeconds(bytes, layout.playTime),
   });
 }

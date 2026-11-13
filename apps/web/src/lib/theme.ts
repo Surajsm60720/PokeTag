@@ -29,6 +29,7 @@ export const GAME_THEMES = [
   "legendsarceus",
   "scarlet",
   "violet",
+  "pokkentournamentdx",
 ] as const;
 
 export type GameTheme = (typeof GAME_THEMES)[number];
@@ -45,6 +46,7 @@ export type ThemeEra =
   | "gen8-sinnoh"
   | "gen8-hisui"
   | "gen9-paldea"
+  | "spinoff-switch"
   | "unknown";
 /** Hardware era dial — drives pixel intensity, corners, glass, motion. */
 export type ThemePlatform = "gba" | "ds" | "3ds" | "switch" | "unknown";
@@ -105,6 +107,8 @@ export function themeEra(theme: string): ThemeEra {
     case "scarlet":
     case "violet":
       return "gen9-paldea";
+    case "pokkentournamentdx":
+      return "spinoff-switch";
     default:
       return "unknown";
   }
@@ -127,7 +131,8 @@ export function themePlatform(theme: string): ThemePlatform {
     era === "gen8-galar" ||
     era === "gen8-sinnoh" ||
     era === "gen8-hisui" ||
-    era === "gen9-paldea"
+    era === "gen9-paldea" ||
+    era === "spinoff-switch"
   ) {
     return "switch";
   }
@@ -138,6 +143,7 @@ export function cartForm(
   generation: number | null,
   theme: string
 ): CartForm {
+  if (theme === "pokkentournamentdx") return "switch";
   if (generation === 6 || generation === 7) return "3ds";
   if (generation === 8 || generation === 9) return "switch";
   if (generation === 4 || generation === 5) return "ds";

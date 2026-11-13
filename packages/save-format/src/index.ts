@@ -4,6 +4,7 @@ export type {
 } from "./convert.js";
 export { convertSave, suggestedFilename } from "./convert.js";
 export { detectSave } from "./detect.js";
+export type { DetectSaveOptions } from "./detect.js";
 export {
   DESMUME_MAGIC,
   appendDesmumeFooter,

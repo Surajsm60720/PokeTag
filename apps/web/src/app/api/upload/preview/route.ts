@@ -11,8 +11,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing file." }, { status: 400 });
     }
     const slotId = String(form.get("slotId") || "") || undefined;
+    const runLabel = String(form.get("runLabel") || "") || undefined;
     const buffer = Buffer.from(await file.arrayBuffer());
-    const preview = await previewUpload(buffer, file.name, slotId);
+    const preview = await previewUpload(buffer, file.name, slotId, runLabel);
     return NextResponse.json(preview);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Preview failed";

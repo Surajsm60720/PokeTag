@@ -1927,6 +1927,33 @@ html[data-platform="switch"] .poketch-dock__title::after {
   color: #fff8f0;
 }
 
+.btn-danger {
+  background: #9b2c2c;
+  color: #fff8f0;
+  border-color: #3b1010;
+}
+
+.btn-danger:hover,
+.btn-danger:focus-visible {
+  background: #b33a3a;
+}
+
+.shelf-run {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.shelf-run__delete {
+  width: 100%;
+  text-align: center;
+}
+
+.run-actions {
+  margin-top: 0;
+}
+
 .btn[data-active="true"] {
   background: var(--color-accent);
   color: #fff8f0;

@@ -7,6 +7,7 @@ import { parseGen6 } from "./gen6.js";
 import { parseGen7 } from "./gen7.js";
 import { parseGen8 } from "./gen8.js";
 import { parseGen9 } from "./gen9.js";
+import { parsePokken } from "./pokken.js";
 import type { ParsedSave } from "./types.js";
 
 export type {
@@ -46,6 +47,10 @@ export function parseSave(
   const buf = toBuffer(bytes);
   if (detection.hasDesmumeFooter) {
     payload = stripDesmumeFooter(buf);
+  }
+
+  if (detection.gameVersion === "pokkentournamentdx") {
+    return parsePokken(payload, detection);
   }
 
   const gen = detection.generation;

@@ -371,6 +371,19 @@ export const GAME_DIRS: Record<string, GameDirInfo> = {
     titleId: "01008F6008C5E000",
     paths: switchPaths("01008F6008C5E000", "Pokémon Violet"),
   },
+  pokkentournamentdx: {
+    gameVersion: "pokkentournamentdx",
+    platform: "switch",
+    titleId: "0100B3F000BE2000",
+    paths: [
+      ...switchPaths("0100B3F000BE2000", "Pokkén Tournament DX"),
+      {
+        label: "Exported .np",
+        path: `…/Pokkén Tournament DX/*.np`,
+        note: "Some dumps rename the Switch save blob to `.np`. Vault the file as-is.",
+      },
+    ],
+  },
 };
 
 export function getGameDir(gameVersion: string): GameDirInfo | null {
@@ -409,6 +422,7 @@ export function shortGameName(gameVersion: string): string {
     legendsarceus: "Legends Arceus",
     scarlet: "Scarlet",
     violet: "Violet",
+    pokkentournamentdx: "Pokkén DX",
   };
   return names[gameVersion] ?? gameVersion;
 }

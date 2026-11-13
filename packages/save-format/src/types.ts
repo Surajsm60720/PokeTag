@@ -1,4 +1,11 @@
-export type SaveFormat = "sav" | "dsv" | "srm" | "zip" | "unknown";
+export type SaveFormat =
+  | "sav"
+  | "dsv"
+  | "srm"
+  | "zip"
+  | "main"
+  | "np"
+  | "unknown";
 
 export type Generation = 3 | 4 | 5 | 6 | 7 | 8 | 9 | null;
 
@@ -32,6 +39,7 @@ export type GameVersion =
   | "legendsarceus"
   | "scarlet"
   | "violet"
+  | "pokkentournamentdx"
   | "unknown";
 
 export interface DetectionResult {

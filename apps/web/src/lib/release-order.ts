@@ -32,6 +32,7 @@ const RELEASE_ORDER: Record<string, number> = {
   legendsarceus: 270,
   scarlet: 280,
   violet: 290,
+  pokkentournamentdx: 225,
 };
 
 export function releaseRank(gameVersion: string): number {
