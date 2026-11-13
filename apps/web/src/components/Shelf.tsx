@@ -1,8 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 import { sortByReleaseDate } from "@/lib/release-order";
 import type { SlotSummary } from "@/lib/vault";
 import { CartridgeCard } from "./CartridgeCard";
@@ -42,48 +38,6 @@ function groupSlotsByConsole(slots: SlotSummary[]) {
     : [{ title: "YOUR GAMES", key: "all", slots: sortByReleaseDate(slots) }];
 }
 
-function ShelfRunCard({ slot }: { slot: SlotSummary }) {
-  const router = useRouter();
-  const [busy, setBusy] = useState(false);
-  const label = slot.runLabel || slot.label || "this run";
-
-  async function deleteRun() {
-    if (
-      !window.confirm(
-        `Delete “${label}” and every save version in it?\n\nThis removes the run from the shelf and deletes the stored files. It cannot be undone.`
-      )
-    ) {
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch(`/api/slots/${slot.id}`, { method: "DELETE" });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      if (!res.ok) {
-        window.alert(data.error || "Could not delete that run.");
-        return;
-      }
-      router.refresh();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  return (
-    <div className="shelf-run">
-      <CartridgeCard slot={slot} />
-      <button
-        type="button"
-        className="btn btn-danger shelf-run__delete"
-        disabled={busy}
-        onClick={() => void deleteRun()}
-      >
-        {busy ? "Deleting…" : "Delete run"}
-      </button>
-    </div>
-  );
-}
-
 export function Shelf({ slots }: { slots: SlotSummary[] }) {
   if (slots.length === 0) {
     return (
@@ -114,8 +68,8 @@ export function Shelf({ slots }: { slots: SlotSummary[] }) {
     <div className="shelf-scene">
       <div className="shelf-toolbar">
         <p className="muted shelf-toolbar__hint">
-          Each cartridge is a separate run. Use Delete run to remove a run and
-          its stored saves.
+          Each cartridge is a separate run. Start another anytime — old runs
+          stay.
         </p>
         <Link className="btn btn-primary" href="/upload?mode=new">
           New run
@@ -128,7 +82,7 @@ export function Shelf({ slots }: { slots: SlotSummary[] }) {
           <div className="shelf-bay">
             <div className="cartridge-grid">
               {row.slots.map((slot) => (
-                <ShelfRunCard key={slot.id} slot={slot} />
+                <CartridgeCard key={slot.id} slot={slot} />
               ))}
             </div>
             <div className="shelf-plank" aria-hidden />

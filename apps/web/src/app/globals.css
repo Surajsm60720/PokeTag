@@ -1938,18 +1938,6 @@ html[data-platform="switch"] .poketch-dock__title::after {
   background: #b33a3a;
 }
 
-.shelf-run {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-}
-
-.shelf-run__delete {
-  width: 100%;
-  text-align: center;
-}
-
 .run-actions {
   margin-top: 0;
 }

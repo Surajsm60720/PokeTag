@@ -112,7 +112,7 @@ export interface ParsedSave {
   progress: ParsedStoryProgress;
 }
 
-export const PARSER_VERSION = "0.2.0";
+export const PARSER_VERSION = "0.3.0";
 
 export function emptyInventory(): ParsedInventory {
   return { bag: [], pc: [] };

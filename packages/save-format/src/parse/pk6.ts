@@ -8,6 +8,7 @@
 import { abilityName } from "./abilities.js";
 import { ballName } from "./balls.js";
 import { itemName } from "./items.js";
+import { gen6LocationName } from "./locations-gen6.js";
 import { moveDetail, moveName } from "./moves.js";
 import { natureName } from "./natures.js";
 import { speciesName } from "./species.js";
@@ -197,6 +198,8 @@ export function parsePk6(
   const otName = decodeUtf16z(pkx, 0xb0, 12);
   const friendship = pkx[0xca] ?? 0;
   const ballId = pkx[0xdc] ?? 0;
+  const metLocationId = readU16(pkx, 0xd8);
+  const metLevel = (pkx[0xdd] ?? 0) & 0x7f;
   const level = ekx.length >= PK6_PARTY ? (pkx[0xec] ?? 1) : 1;
   const currentHp =
     ekx.length >= PK6_PARTY ? readU16(pkx, 0xf0) : 0;
@@ -225,6 +228,9 @@ export function parsePk6(
       moveDetails,
       heldItemId: heldItemId || null,
       ball: ballId ? ballName(ballId) : null,
+      metLevel: metLevel || null,
+      metLocationId: metLocationId || null,
+      metLocation: metLocationId ? gen6LocationName(metLocationId) : null,
       otName,
     }),
   };
