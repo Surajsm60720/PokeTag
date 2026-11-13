@@ -54,10 +54,10 @@ describe("parseGen6 dex / location / bag", () => {
     setBit(data, flags, 655); // owned native
     setBit(data, flags + 0x60, 655); // seen male
 
-    // Bag: 5 Poké Balls in Items; 3 Potions in medicine
+    // Bag: 5 Poké Balls in Items; 3 Potions in medicine (Gen 6 indexes)
     writeU16(data, 0x00400, 4); // Poké Ball
     writeU16(data, 0x00402, 5);
-    writeU16(data, 0x00400 + 0x968, 13); // Potion in medicine pouch (XY)
+    writeU16(data, 0x00400 + 0x968, 17); // Potion
     writeU16(data, 0x00400 + 0x96a, 3);
 
     const detection = detectSave(data, "main");
@@ -72,8 +72,16 @@ describe("parseGen6 dex / location / bag", () => {
     assert.ok(parsed.inventory.bag.some((i) => i.id === 4 && i.quantity === 5));
     assert.ok(
       parsed.inventory.bag.some(
-        (i) => i.id === 13 && i.quantity === 3 && i.pocket === "medicine"
+        (i) =>
+          i.id === 17 &&
+          i.quantity === 3 &&
+          i.pocket === "medicine" &&
+          i.name === "Potion"
       )
+    );
+    assert.equal(
+      parsed.inventory.bag.find((i) => i.id === 4)?.name,
+      "Poké Ball"
     );
   });
 

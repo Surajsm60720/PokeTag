@@ -262,7 +262,7 @@ function parseInventory(
       if (qty === 0 || qty > 999) continue;
       const entry: ParsedBagItem = {
         id,
-        name: itemName(id) || `Item #${id}`,
+        name: itemName(id, 3) || `Item #${id}`,
         quantity: qty,
         pocket: pocket.pocket,
       };

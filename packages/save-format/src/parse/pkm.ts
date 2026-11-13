@@ -231,7 +231,7 @@ export function parsePk3(
     originKind = "trade";
   }
 
-  const heldItem = heldItemId ? itemName(heldItemId) || null : null;
+  const heldItem = heldItemId ? itemName(heldItemId, 3) || null : null;
   const locPart = metLocDisplay && metLocDisplay !== `Map 0/${metLocationId}`
     ? metLocDisplay
     : metLocationId > 0
@@ -406,7 +406,7 @@ export function parsePk4Box(raw: Uint8Array, slot: number): ParsedPokemon | null
   }
 
   const ball = ballName(ballId);
-  const heldItem = heldItemId ? itemName(heldItemId) || null : null;
+  const heldItem = heldItemId ? itemName(heldItemId, 4) || null : null;
   const caughtAt = formatMetDate(metYear, metMonth, metDay);
   const metLocation =
     metLocationId > 0 ? `Location #${metLocationId}` : null;
@@ -504,7 +504,7 @@ export function parsePk8Shallow(raw: Uint8Array, slot: number): ParsedPokemon | 
     shiny: false,
     ability: abilityId ? abilityName(abilityId) : "",
     nature: natureId < 25 ? natureName(natureId) : "",
-    heldItem: heldItemId ? itemName(heldItemId) || null : null,
+    heldItem: heldItemId ? itemName(heldItemId, 5) || null : null,
     moves,
     types: speciesTypes(speciesId),
     friendship: 0,
