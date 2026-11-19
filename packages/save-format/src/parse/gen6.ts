@@ -12,6 +12,7 @@ import type {
   ParsedInventory,
   ParsedPokemon,
   ParsedSave,
+  ParsedStoryProgress,
 } from "./types.js";
 import {
   baseSave,
@@ -38,6 +39,7 @@ const XY_FOREIGN_OWNED = 0x644;
 
 interface Gen6Layout {
   bag: number;
+  adventureInfo: number;
   situation: number;
   myStatus: number;
   misc: number;
@@ -46,6 +48,7 @@ interface Gen6Layout {
   playTime: number;
   party: number;
   pokeDex: number;
+  hallOfFame: number;
   box: number;
   boxCount: number;
   /** MyItem pouch starts relative to Bag. */
@@ -59,6 +62,7 @@ interface Gen6Layout {
 
 const XY: Gen6Layout = {
   bag: 0x00400,
+  adventureInfo: 0x01200,
   situation: 0x01400,
   myStatus: 0x14000,
   misc: 0x4200,
@@ -67,6 +71,7 @@ const XY: Gen6Layout = {
   playTime: 0x1800,
   party: 0x14200,
   pokeDex: 0x15000,
+  hallOfFame: 0x19400,
   box: 0x22600,
   boxCount: 31,
   pouchItems: 0x000,
@@ -79,6 +84,7 @@ const XY: Gen6Layout = {
 
 const ORAS: Gen6Layout = {
   bag: 0x00400,
+  adventureInfo: 0x01200,
   situation: 0x01400,
   myStatus: 0x14000,
   misc: 0x4200,
@@ -87,6 +93,7 @@ const ORAS: Gen6Layout = {
   playTime: 0x1800,
   party: 0x14200,
   pokeDex: 0x15000,
+  hallOfFame: 0x19e00,
   box: 0x33000,
   boxCount: 31,
   pouchItems: 0x000,
@@ -201,6 +208,33 @@ function readPouch(
     });
   }
   return out;
+}
+
+/**
+ * Gen 6 story clear is recorded as SecondsToFame (AdventureInfo+0x20) when the
+ * player first enters the Hall of Fame. A non-empty Dendou/HoF record is a
+ * backup signal. Beating the champion implies the Elite Four were cleared.
+ */
+function parseStoryProgress(
+  bytes: Uint8Array,
+  layout: Gen6Layout
+): ParsedStoryProgress {
+  const fameOff = layout.adventureInfo + 0x20;
+  const secondsToFame =
+    fameOff + 4 <= bytes.length ? readU32LE(bytes, fameOff) : 0;
+  let hofOccupied = false;
+  if (layout.hallOfFame + 4 <= bytes.length) {
+    const head = readU32LE(bytes, layout.hallOfFame);
+    hofOccupied = head !== 0 && head !== 0xffffffff;
+  }
+  const championDefeated = secondsToFame > 0 || hofOccupied;
+  return {
+    eliteFourDefeated: championDefeated,
+    championDefeated,
+    note: championDefeated
+      ? "Hall of Fame / SecondsToFame set — Champion and Elite Four cleared."
+      : "No Hall of Fame entry yet — Champion and Elite Four still open.",
+  };
 }
 
 function parseInventory(
@@ -322,5 +356,6 @@ export function parseGen6(
     location,
     locationMapId,
     inventory: parseInventory(bytes, layout),
+    progress: parseStoryProgress(bytes, layout),
   });
 }

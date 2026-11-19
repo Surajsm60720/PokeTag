@@ -83,6 +83,27 @@ describe("parseGen6 dex / location / bag", () => {
       parsed.inventory.bag.find((i) => i.id === 4)?.name,
       "Poké Ball"
     );
+    assert.equal(parsed.progress.championDefeated, false);
+    assert.equal(parsed.progress.eliteFourDefeated, false);
+  });
+
+  it("marks Champion/Elite Four from SecondsToFame", () => {
+    const data = Buffer.alloc(0x65600, 0);
+    data[0x14004] = 25; // Y
+    // AdventureInfo.SecondsToFame at 0x01220
+    data[0x01220] = 1;
+    const parsed = parseGen6(data, detectSave(data, "main"));
+    assert.equal(parsed.progress.championDefeated, true);
+    assert.equal(parsed.progress.eliteFourDefeated, true);
+  });
+
+  it("marks Champion from a non-empty Hall of Fame record", () => {
+    const data = Buffer.alloc(0x65600, 0);
+    data[0x14004] = 24; // X
+    data[0x19400] = 0x92; // occupied Dendou head
+    const parsed = parseGen6(data, detectSave(data, "main"));
+    assert.equal(parsed.progress.championDefeated, true);
+    assert.equal(parsed.progress.eliteFourDefeated, true);
   });
 
   it("counts XY foreign-owned flags for species under 649", () => {
