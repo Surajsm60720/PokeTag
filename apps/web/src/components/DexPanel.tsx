@@ -34,6 +34,7 @@ export function DexPanel({ dex }: { dex: ParsedDex }) {
               speciesId={entry.seen ? entry.speciesId : null}
               width={40}
               height={40}
+              loading="lazy"
               className={entry.seen ? "" : "sprite-image--muted"}
             />
             <span className="dex-tile__no">

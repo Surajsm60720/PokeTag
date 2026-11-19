@@ -25,8 +25,15 @@ export default function RootLayout({
       data-era="gen3"
       data-platform="gba"
       data-public-mode={publicMode ? "true" : "false"}
+      suppressHydrationWarning
     >
       <body>
+        {publicMode ? null : (
+          <>
+            <link rel="preconnect" href="https://raw.githubusercontent.com" />
+            <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
+          </>
+        )}
         <div className="world">
           <div className="world__sky" aria-hidden />
           <div className="world__horizon" aria-hidden />

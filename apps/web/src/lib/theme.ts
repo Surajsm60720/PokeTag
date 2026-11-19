@@ -170,6 +170,22 @@ export function readDocumentTheme(): DocumentThemeState {
   };
 }
 
+/**
+ * Runs while the game page is parsing, so the first paint uses that game's
+ * theme instead of waiting for React. Values are JSON-encoded.
+ */
+export function themeBootstrapScript(
+  gameVersion: string | null | undefined
+): string {
+  const theme = resolveTheme(gameVersion);
+  const resolved = theme === "unknown" ? DEFAULT_THEME : theme;
+  return [
+    `document.documentElement.dataset.theme=${JSON.stringify(resolved)}`,
+    `document.documentElement.dataset.era=${JSON.stringify(themeEra(resolved))}`,
+    `document.documentElement.dataset.platform=${JSON.stringify(themePlatform(resolved))}`,
+  ].join(";") + ";";
+}
+
 /** Apply a game theme to `<html>` for scene + UI tokens. */
 export function applyThemeToDocument(
   gameVersion: string | null | undefined

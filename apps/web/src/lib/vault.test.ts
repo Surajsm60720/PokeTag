@@ -3,6 +3,7 @@ import { after, describe, it } from "node:test";
 
 import { getDb } from "./db";
 import { getObject, listMemoryObjects } from "./storage";
+import { readSlotPage } from "./shelf-read";
 import {
   commitUpload,
   deleteSlot,
@@ -104,6 +105,36 @@ describe("vault integrity (PRD §12)", () => {
       /locked to emerald/
     );
     assert.equal((await listVersions(slotId)).length, 1, "nothing was written");
+  });
+
+  it("reads a run's shelf card and versions in one page query", async () => {
+    const { slotId, versionId } = await newRun(EMERALD, "page-read");
+
+    const page = await readSlotPage(slotId);
+    assert.ok(page);
+    assert.equal(page.slot.id, slotId);
+    assert.equal(page.slot.gameVersion, "emerald");
+    assert.equal(page.slot.currentVersionId, versionId);
+    assert.equal(page.slot.hasParsed, false);
+    assert.equal(page.snapshot, null);
+    assert.equal(page.versions.length, 1);
+    assert.equal(page.versions[0]?.id, versionId);
+
+    const listed = (await listSlots()).find((slot) => slot.id === slotId);
+    assert.equal(listed?.gameVersion, "emerald");
+    assert.equal(listed?.hasParsed, false);
+    assert.deepEqual(listed?.partyIcons, []);
+
+    const second = await commitUpload({
+      data: EMERALD_V2,
+      filename: "page-read-2.sav",
+      slotId,
+    });
+    const again = await readSlotPage(slotId);
+    assert.equal(again?.versions.length, 2);
+    assert.equal(again?.versions[0]?.id, second.versionId);
+    assert.equal(again?.versions[1]?.id, versionId);
+    assert.equal(again?.slot.currentVersionId, second.versionId);
   });
 
   it("requires a run label for a new run", async () => {

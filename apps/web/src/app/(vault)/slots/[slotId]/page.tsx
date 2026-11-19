@@ -1,5 +1,6 @@
 import { SlotDetail } from "@/components/SlotDetail";
-import { getSlot, getSlotSnapshot, listVersions } from "@/lib/vault";
+import { themeBootstrapScript } from "@/lib/theme";
+import { readSlotPage } from "@/lib/shelf-read";
 import type { DetectionResult } from "@poketag/save-format";
 import { notFound } from "next/navigation";
 
@@ -20,11 +21,11 @@ export default async function SlotPage({
   params: Promise<{ slotId: string }>;
 }) {
   const { slotId } = await params;
-  const slot = await getSlot(slotId);
-  if (!slot) notFound();
+  const loaded = await readSlotPage(slotId);
+  if (!loaded) notFound();
 
-  const snapshot = await getSlotSnapshot(slotId);
-  const versionRows = await listVersions(slotId);
+  const { slot, snapshot } = loaded;
+  const versionRows = loaded.versions;
 
   const versions = versionRows.map((v) => {
     const detection = parseDetection(v.detection_json);
@@ -49,6 +50,11 @@ export default async function SlotPage({
 
   return (
     <main>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: themeBootstrapScript(slot.gameVersion),
+        }}
+      />
       <SlotDetail
         slot={{
           id: slot.id,

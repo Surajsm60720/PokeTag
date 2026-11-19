@@ -18,6 +18,7 @@ export function SpriteImage({
   className = "",
   width = 64,
   height = 64,
+  loading = "eager",
 }: {
   src?: string | null;
   speciesId?: number | null;
@@ -29,6 +30,7 @@ export function SpriteImage({
   className?: string;
   width?: number;
   height?: number;
+  loading?: "eager" | "lazy";
 }) {
   const [publicMode, setPublicMode] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -59,6 +61,8 @@ export function SpriteImage({
         alt={alt}
         width={width}
         height={height}
+        loading={loading}
+        decoding="async"
         style={{ imageRendering: "pixelated", width, height }}
       />
     );
@@ -74,6 +78,8 @@ export function SpriteImage({
       alt={alt}
       width={width}
       height={height}
+      loading={loading}
+      decoding="async"
       style={{ imageRendering: rendering, width, height }}
       onError={() => setFailed(true)}
     />

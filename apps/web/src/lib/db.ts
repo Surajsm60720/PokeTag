@@ -223,20 +223,8 @@ export async function withTransaction<T>(
   });
 }
 
-async function columnExists(
-  database: Db,
-  table: string,
-  column: string
-): Promise<boolean> {
-  const rows = await database
-    .prepare(`PRAGMA table_info(${table})`)
-    .all<{ name: string }>();
-  return rows.some((r) => r.name === column);
-}
-
-async function migrate(database: Db): Promise<void> {
-  const ddl = [
-    `CREATE TABLE IF NOT EXISTS save_slots (
+const MIGRATION_DDL = [
+  `CREATE TABLE IF NOT EXISTS save_slots (
       id TEXT PRIMARY KEY,
       game_version TEXT NOT NULL,
       generation INTEGER,
@@ -244,7 +232,7 @@ async function migrate(database: Db): Promise<void> {
       created_at TEXT NOT NULL,
       current_version_id TEXT
     )`,
-    `CREATE TABLE IF NOT EXISTS save_versions (
+  `CREATE TABLE IF NOT EXISTS save_versions (
       id TEXT PRIMARY KEY,
       slot_id TEXT NOT NULL,
       parent_version_id TEXT,
@@ -261,16 +249,16 @@ async function migrate(database: Db): Promise<void> {
       detection_json TEXT NOT NULL DEFAULT '{}',
       FOREIGN KEY (slot_id) REFERENCES save_slots(id)
     )`,
-    `CREATE INDEX IF NOT EXISTS idx_versions_slot ON save_versions(slot_id)`,
-    `CREATE INDEX IF NOT EXISTS idx_versions_sha ON save_versions(sha256)`,
-    `CREATE TABLE IF NOT EXISTS device_state (
+  `CREATE INDEX IF NOT EXISTS idx_versions_slot ON save_versions(slot_id)`,
+  `CREATE INDEX IF NOT EXISTS idx_versions_sha ON save_versions(sha256)`,
+  `CREATE TABLE IF NOT EXISTS device_state (
       device_label TEXT NOT NULL,
       slot_id TEXT NOT NULL,
       last_downloaded_version_id TEXT,
       PRIMARY KEY (device_label, slot_id),
       FOREIGN KEY (slot_id) REFERENCES save_slots(id)
     )`,
-    `CREATE TABLE IF NOT EXISTS parsed_snapshots (
+  `CREATE TABLE IF NOT EXISTS parsed_snapshots (
       version_id TEXT PRIMARY KEY,
       trainer_json TEXT NOT NULL DEFAULT '{}',
       party_json TEXT NOT NULL DEFAULT '[]',
@@ -287,47 +275,9 @@ async function migrate(database: Db): Promise<void> {
       progress_json TEXT NOT NULL DEFAULT '{"eliteFourDefeated":null,"championDefeated":null,"note":""}',
       FOREIGN KEY (version_id) REFERENCES save_versions(id)
     )`,
-  ];
-  for (const sql of ddl) {
-    await database.exec(sql);
-  }
+];
 
-  if (!(await columnExists(database, "save_versions", "parse_status"))) {
-    await database.exec(
-      `ALTER TABLE save_versions ADD COLUMN parse_status TEXT NOT NULL DEFAULT 'pending'`
-    );
-  }
-  if (!(await columnExists(database, "save_versions", "parse_error"))) {
-    await database.exec(
-      `ALTER TABLE save_versions ADD COLUMN parse_error TEXT NOT NULL DEFAULT ''`
-    );
-  }
-  if (!(await columnExists(database, "save_versions", "parsed_at"))) {
-    await database.exec(`ALTER TABLE save_versions ADD COLUMN parsed_at TEXT`);
-  }
-  if (!(await columnExists(database, "save_versions", "parse_attempts"))) {
-    await database.exec(
-      `ALTER TABLE save_versions ADD COLUMN parse_attempts INTEGER NOT NULL DEFAULT 0`
-    );
-  }
-  if (!(await columnExists(database, "save_versions", "parse_started_at"))) {
-    await database.exec(
-      `ALTER TABLE save_versions ADD COLUMN parse_started_at TEXT`
-    );
-  }
-
-  if (!(await columnExists(database, "parsed_snapshots", "inventory_json"))) {
-    await database.exec(
-      `ALTER TABLE parsed_snapshots ADD COLUMN inventory_json TEXT NOT NULL DEFAULT '{"bag":[],"pc":[]}'`
-    );
-  }
-  if (!(await columnExists(database, "parsed_snapshots", "progress_json"))) {
-    await database.exec(
-      `ALTER TABLE parsed_snapshots ADD COLUMN progress_json TEXT NOT NULL DEFAULT '{"eliteFourDefeated":null,"championDefeated":null,"note":""}'`
-    );
-  }
-
-  await database.exec(`
+const HEAL_PARSED_VERSIONS = `
     UPDATE save_versions
     SET parse_status = 'done', parsed_at = COALESCE(parsed_at, uploaded_at)
     WHERE parse_status = 'pending'
@@ -335,7 +285,66 @@ async function migrate(database: Db): Promise<void> {
         id LIKE 'demo-%'
         OR EXISTS (SELECT 1 FROM parsed_snapshots p WHERE p.version_id = save_versions.id)
       )
-  `);
+  `;
+
+/**
+ * Startup used to issue one round trip per CREATE and per column check.
+ * Against remote Turso that was most of a cold page load. Tables are created
+ * in one batch; both schemas are inspected in one query; alters run only
+ * when a column is actually missing.
+ */
+async function migrate(database: Db): Promise<void> {
+  await database.batch(MIGRATION_DDL.map((sql) => ({ sql })));
+
+  const columns = await database
+    .prepare(
+      `SELECT 'save_versions' AS tbl, name FROM pragma_table_info('save_versions')
+       UNION ALL
+       SELECT 'parsed_snapshots', name FROM pragma_table_info('parsed_snapshots')`
+    )
+    .all<{ tbl: string; name: string }>();
+  const has = (table: string, column: string) =>
+    columns.some((c) => c.tbl === table && c.name === column);
+
+  const alters: string[] = [];
+  if (!has("save_versions", "parse_status")) {
+    alters.push(
+      `ALTER TABLE save_versions ADD COLUMN parse_status TEXT NOT NULL DEFAULT 'pending'`
+    );
+  }
+  if (!has("save_versions", "parse_error")) {
+    alters.push(
+      `ALTER TABLE save_versions ADD COLUMN parse_error TEXT NOT NULL DEFAULT ''`
+    );
+  }
+  if (!has("save_versions", "parsed_at")) {
+    alters.push(`ALTER TABLE save_versions ADD COLUMN parsed_at TEXT`);
+  }
+  if (!has("save_versions", "parse_attempts")) {
+    alters.push(
+      `ALTER TABLE save_versions ADD COLUMN parse_attempts INTEGER NOT NULL DEFAULT 0`
+    );
+  }
+  if (!has("save_versions", "parse_started_at")) {
+    alters.push(`ALTER TABLE save_versions ADD COLUMN parse_started_at TEXT`);
+  }
+  if (!has("parsed_snapshots", "inventory_json")) {
+    alters.push(
+      `ALTER TABLE parsed_snapshots ADD COLUMN inventory_json TEXT NOT NULL DEFAULT '{"bag":[],"pc":[]}'`
+    );
+  }
+  if (!has("parsed_snapshots", "progress_json")) {
+    alters.push(
+      `ALTER TABLE parsed_snapshots ADD COLUMN progress_json TEXT NOT NULL DEFAULT '{"eliteFourDefeated":null,"championDefeated":null,"note":""}'`
+    );
+  }
+  if (alters.length) {
+    await database.batch(alters.map((sql) => ({ sql })));
+  }
+
+  if (has("save_versions", "parse_status") || alters.length) {
+    await database.exec(HEAL_PARSED_VERSIONS);
+  }
 }
 
 export function describeDatabase(): string {

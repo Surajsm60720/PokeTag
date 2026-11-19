@@ -1,4 +1,3 @@
-import { buildDemoSnapshot } from "./demo-parsed";
 import { getDb, type ParsedSnapshotRow } from "./db";
 import type {
   ParsedBadge,
@@ -54,7 +53,7 @@ function normalizeBoxes(boxes: ParsedBox[]): ParsedBox[] {
   }));
 }
 
-function rowToSnapshot(
+export function snapshotFromRow(
   row: ParsedSnapshotRow,
   gameVersion: string
 ): ParsedSnapshot {
@@ -119,9 +118,11 @@ export async function getParsedSnapshot(
     .prepare(`SELECT * FROM parsed_snapshots WHERE version_id = ?`)
     .get(versionId) as ParsedSnapshotRow | undefined;
 
-  if (row) return rowToSnapshot(row, gameVersion);
+  if (row) return snapshotFromRow(row, gameVersion);
 
+  // Demo art is a large module. Only pulls it in for demo version ids.
   if (versionId.startsWith("demo-")) {
+    const { buildDemoSnapshot } = await import("./demo-parsed");
     return buildDemoSnapshot(gameVersion, versionId);
   }
 

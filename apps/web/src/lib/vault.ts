@@ -11,10 +11,13 @@ import { deleteObject, getObject, putObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
 import { queueParseVersion, sweepStaleParses } from "./parse-job";
 import {
-  getParsedSnapshot,
-  saveParsedSnapshot,
-  snapshotShelfFields,
-} from "./snapshots";
+  getSlot as readSlot,
+  listSlots as readSlots,
+  type SlotSummary,
+} from "./shelf-read";
+import { getParsedSnapshot, saveParsedSnapshot } from "./snapshots";
+
+export type { SlotSummary };
 
 const MAX_UPLOAD_BYTES = 32 * 1024 * 1024;
 
@@ -22,125 +25,15 @@ export function sha256(data: Buffer): string {
   return createHash("sha256").update(data).digest("hex");
 }
 
-export interface SlotSummary {
-  id: string;
-  gameVersion: string;
-  generation: number | null;
-  runLabel: string;
-  createdAt: string;
-  currentVersionId: string | null;
-  lastUploadedAt: string | null;
-  originalFilename: string | null;
-  sourceFormat: string | null;
-  sizeBytes: number | null;
-  recognized: boolean;
-  label: string;
-  playTimeSeconds: number | null;
-  badgeCount: number | null;
-  partyIcons: Array<{
-    speciesId: number;
-    speciesName: string;
-    types: string[];
-    shiny: boolean;
-    level: number;
-  }>;
-  trainerName: string | null;
-  location: string | null;
-  hasParsed: boolean;
-  parseStatus: ParseStatus | null;
-  parseError: string | null;
-}
-
-function detectionLabel(json: string): string {
-  try {
-    const d = JSON.parse(json) as DetectionResult;
-    return d.label || "Save";
-  } catch {
-    return "Save";
-  }
-}
-
-/** Row shape produced by SLOT_SUMMARY_SELECT. */
-type SlotJoinRow = {
-  id: string;
-  game_version: string;
-  generation: number | null;
-  run_label: string;
-  created_at: string;
-  current_version_id: string | null;
-  last_uploaded_at: string | null;
-  original_filename: string | null;
-  source_format: string | null;
-  size_bytes: number | null;
-  recognized: number | null;
-  detection_json: string | null;
-  parse_status: ParseStatus | null;
-  parse_error: string | null;
-};
-
-const SLOT_SUMMARY_SELECT = `SELECT s.*, v.uploaded_at as last_uploaded_at,
-        v.original_filename, v.source_format, v.size_bytes, v.recognized,
-        v.detection_json, v.parse_status, v.parse_error
- FROM save_slots s
- LEFT JOIN save_versions v ON v.id = s.current_version_id`;
-
-async function summarizeSlot(s: SlotJoinRow): Promise<SlotSummary> {
-  const snapshot = await getParsedSnapshot(
-    s.current_version_id,
-    s.game_version
-  );
-  const shelf = snapshotShelfFields(snapshot);
-  return {
-    id: s.id,
-    gameVersion: s.game_version,
-    generation: s.generation,
-    runLabel: s.run_label,
-    createdAt: s.created_at,
-    currentVersionId: s.current_version_id,
-    lastUploadedAt: s.last_uploaded_at,
-    originalFilename: s.original_filename,
-    sourceFormat: s.source_format,
-    sizeBytes: s.size_bytes,
-    recognized: Boolean(s.recognized),
-    label: s.detection_json
-      ? detectionLabel(s.detection_json)
-      : s.run_label || s.game_version,
-    playTimeSeconds: shelf.playTimeSeconds,
-    badgeCount: shelf.badgeCount,
-    partyIcons: shelf.partyIcons,
-    trainerName: shelf.trainerName,
-    location: shelf.location,
-    hasParsed: Boolean(snapshot),
-    parseStatus: s.parse_status,
-    parseError: s.parse_error,
-  };
-}
-
 export async function listSlots(): Promise<SlotSummary[]> {
   // Self-heal parses abandoned by a dead process before rendering the shelf.
+  // The page itself uses the lighter reader and does not wait on this.
   await sweepStaleParses();
-  const db = await getDb();
-  const slots = await db
-    .prepare(
-      `${SLOT_SUMMARY_SELECT}
-       ORDER BY COALESCE(v.uploaded_at, s.created_at) DESC`
-    )
-    .all<SlotJoinRow>();
-
-  const out: SlotSummary[] = [];
-  for (const s of slots) {
-    out.push(await summarizeSlot(s));
-  }
-  return out;
+  return readSlots();
 }
 
 export async function getSlot(slotId: string): Promise<SlotSummary | null> {
-  const db = await getDb();
-  const slot = await db
-    .prepare(`${SLOT_SUMMARY_SELECT} WHERE s.id = ?`)
-    .get<SlotJoinRow>(slotId);
-  if (!slot) return null;
-  return summarizeSlot(slot);
+  return readSlot(slotId);
 }
 
 export async function getSlotSnapshot(

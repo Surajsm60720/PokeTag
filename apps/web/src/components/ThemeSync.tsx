@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
 import {
   applyThemeToDocument,
+  DEFAULT_THEME,
   restoreDocumentTheme,
+  themeEra,
+  themePlatform,
 } from "@/lib/theme";
 
 /**
@@ -14,12 +17,17 @@ export function ThemeSync({
 }: {
   gameVersion: string | null | undefined;
 }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!gameVersion) return;
 
-    const prev = applyThemeToDocument(gameVersion);
+    applyThemeToDocument(gameVersion);
     return () => {
-      restoreDocumentTheme(prev);
+      const theme = DEFAULT_THEME;
+      restoreDocumentTheme({
+        theme,
+        era: themeEra(theme),
+        platform: themePlatform(theme),
+      });
     };
   }, [gameVersion]);
 

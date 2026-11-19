@@ -1,11 +1,12 @@
 import { DialogBox } from "@/components/DialogBox";
 import { Shelf } from "@/components/Shelf";
-import { listSlots } from "@/lib/vault";
+import { listSlots, scheduleStaleParseSweep } from "@/lib/shelf-read";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function HomePage() {
+  scheduleStaleParseSweep();
   const slots = await listSlots();
   const copy =
     slots.length === 0

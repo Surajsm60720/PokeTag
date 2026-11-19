@@ -62,6 +62,7 @@ export function BoxGrid({ boxes }: { boxes: ParsedBox[] }) {
                 shiny={mon.shiny}
                 width={40}
                 height={40}
+                loading="lazy"
               />
             ) : (
               <span className="box-grid__empty" />
