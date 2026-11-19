@@ -1,13 +1,21 @@
 import { getGameDir, type GameDirInfo } from "@/lib/game-dirs";
 import { gameDisplayName } from "@/lib/format";
 
-type OsGroup = "macOS" | "Windows" | "Linux" | "Android" | "Hardware" | "Other";
+type OsGroup =
+  | "macOS"
+  | "Windows"
+  | "Linux"
+  | "Android"
+  | "iOS"
+  | "Hardware"
+  | "Other";
 
 const OS_ORDER: OsGroup[] = [
   "macOS",
   "Windows",
   "Linux",
   "Android",
+  "iOS",
   "Hardware",
   "Other",
 ];
@@ -22,6 +30,16 @@ function classifyOs(label: string, path: string): OsGroup {
     s.includes("atmosphere")
   ) {
     return "Hardware";
+  }
+  if (
+    s.includes("ios") ||
+    s.includes("iphone") ||
+    s.includes("delta") ||
+    s.includes("folium") ||
+    s.includes("melonx") ||
+    s.includes("manic emu")
+  ) {
+    return "iOS";
   }
   if (
     s.includes("android") ||

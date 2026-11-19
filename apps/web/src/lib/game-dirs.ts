@@ -54,6 +54,15 @@ function citraPaths(low: string, name: string): GameDirInfo["paths"] {
       path: `sdmc:/JKSV/${name}/`,
       note: "Exported save dumps — copy back via the same app.",
     },
+    {
+      label: "Folium (iOS)",
+      path: `On My iPhone/Folium/Cytrus/sdmc/Nintendo 3DS/<ID0>/<ID1>/title/00040000/${low}/data/00000001/`,
+      note: "ID0 and ID1 are often all zeros. The file inside is main.",
+    },
+    {
+      label: "Manic EMU (iOS)",
+      path: `On My iPhone/Manic EMU/3DS/sdmc/Nintendo 3DS/00000000000000000000000000000000/00000000000000000000000000000000/title/00040000/${low}/data/00000001/`,
+    },
   ];
 }
 
@@ -101,6 +110,11 @@ function switchPaths(titleId: string, name: string): GameDirInfo["paths"] {
       path: `sdmc:/atmosphere/contents/${tid}/`,
       note: "Mods / LayeredFS — not the raw save, but the title folder.",
     },
+    {
+      label: "MeloNX (iOS)",
+      path: `On My iPhone/MeloNX/bis/user/save/`,
+      note: `Same layout as Ryujinx. The folder is a numeric save id, not ${tid}.`,
+    },
   ];
 }
 
@@ -144,6 +158,16 @@ function gbaPaths(filename: string): GameDirInfo["paths"] {
       label: "Pizza Boy GBA (Android)",
       path: `Android/data/it.dbtecno.pizzaboygba/files/saves/ → ${filename}`,
     },
+    {
+      label: "Delta (iOS)",
+      path: `On My iPhone/Delta/Database/Games/ → ${filename}`,
+      note: "The in-game .sav. Database/Save States is a save state, not this file.",
+    },
+    {
+      label: "RetroArch (iOS)",
+      path: `On My iPhone/RetroArch/saves/ → ${srm}`,
+      note: "Some installs nest this under documents. The core usually writes .srm.",
+    },
   ];
 }
 
@@ -176,6 +200,15 @@ function dsPaths(filename: string): GameDirInfo["paths"] {
     {
       label: "DraStic (Android)",
       path: `Android/data/com.dsemu.drastic/files/backup/ → ${filename}`,
+    },
+    {
+      label: "Delta (iOS)",
+      path: `On My iPhone/Delta/Database/Games/ → ${filename}`,
+      note: "The in-game .sav. A DS save state is an extensionless file in Database/Save States.",
+    },
+    {
+      label: "RetroArch (iOS)",
+      path: `On My iPhone/RetroArch/saves/ → ${filename.replace(/\.sav$/i, ".srm")}`,
     },
   ];
 }
