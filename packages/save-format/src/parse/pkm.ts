@@ -4,8 +4,9 @@
  */
 
 import { abilityName } from "./abilities.js";
+import { levelFromSpeciesExp } from "./exp.js";
 import { ballName } from "./balls.js";
-import { decodeGen3String } from "./charset.js";
+import { decodeGen3String, decodeGen4String } from "./charset.js";
 import { itemName } from "./items.js";
 import { locationName } from "./locations.js";
 import { moveDetail, moveName } from "./moves.js";
@@ -303,15 +304,44 @@ export function pkmLcrng(seed: number): number {
  * Decrypt Gen 4/5 PK data block (bytes after checksum header).
  * Seeded with checksum; each u16 XORed with (rng >>> 16).
  */
-export function decryptPkmBlock(block: Uint8Array, checksum: number): Uint8Array {
-  const out = block.slice();
-  let seed = checksum & 0xffff;
+export function decryptPkmBlock(block: Uint8Array, seedIn: number): Uint8Array {
+  const out = new Uint8Array(block);
+  let seed = seedIn >>> 0;
   for (let i = 0; i < out.length; i += 2) {
     seed = pkmLcrng(seed);
     const xor = (seed >>> 16) & 0xffff;
     const val = readU16(out, i) ^ xor;
     out[i] = val & 0xff;
     out[i + 1] = (val >>> 8) & 0xff;
+  }
+  return out;
+}
+
+/**
+ * Gen 4/5 shuffle index. The game uses `(PID >> 13) & 31`, then the inverse
+ * of PKHeX's BlockPosition table, because block `order[i]` is stored at
+ * position `i`.
+ */
+const PK45_SHUFFLE_INVERT = [
+  0, 1, 2, 4, 3, 5, 6, 7, 12, 18, 13, 19, 8, 10, 14, 20, 16, 22, 9, 11, 15, 21,
+  17, 23, 0, 1, 2, 4, 3, 5, 6, 7,
+] as const;
+
+/** Unshuffle Gen 4/5 4×32-byte blocks. Gen 3 keeps using PID % 24. */
+export function unshufflePkm45(
+  data: Uint8Array,
+  personality: number,
+  blockSize: number
+): Uint8Array {
+  const sv = (personality >>> 13) & 31;
+  const order = PK3_SHUFFLE_ORDER[PK45_SHUFFLE_INVERT[sv]!]!;
+  const out = new Uint8Array(data.length);
+  for (let pos = 0; pos < 4; pos++) {
+    const dest = order[pos]!;
+    out.set(
+      data.subarray(pos * blockSize, pos * blockSize + blockSize),
+      dest * blockSize
+    );
   }
   return out;
 }
@@ -351,65 +381,129 @@ function formatMetDate(year: number, month: number, day: number): string | null 
   return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-/** Parse boxed PK4 (136 bytes) / party (236). */
-export function parsePk4Box(raw: Uint8Array, slot: number): ParsedPokemon | null {
+function sumU16(data: Uint8Array): number {
+  let sum = 0;
+  for (let i = 0; i < data.length; i += 2) {
+    sum = (sum + readU16(data, i)) & 0xffff;
+  }
+  return sum;
+}
+
+/** Version byte inside a PK4. HeartGold is 7 and SoulSilver is 8. */
+const PK4_VERSIONS: Record<number, string> = {
+  1: "Sapphire",
+  2: "Ruby",
+  3: "Emerald",
+  4: "FireRed",
+  5: "LeafGreen",
+  7: "HeartGold",
+  8: "SoulSilver",
+  10: "Diamond",
+  11: "Pearl",
+  12: "Platinum",
+  15: "Colosseum/XD",
+  20: "White",
+  21: "Black",
+  22: "White 2",
+  23: "Black 2",
+};
+
+function readPkString(
+  data: Uint8Array,
+  offset: number,
+  maxChars: number,
+  encoding: "gen4" | "utf16"
+): string {
+  if (encoding === "utf16") return decodeUtf16z(data, offset, maxChars);
+  return decodeGen4String(data, offset, maxChars);
+}
+
+/**
+ * Parse boxed PK4 (136 bytes) / party (236).
+ * Offsets are into the 128-byte data block, which starts at file offset 0x08.
+ * `encoding` is utf16 for Generation 5, which shares this layout.
+ */
+export function parsePk4Box(
+  raw: Uint8Array,
+  slot: number,
+  encoding: "gen4" | "utf16" = "gen4"
+): ParsedPokemon | null {
   if (raw.length < 136) return null;
   const personality = readU32(raw, 0);
   const checksum = readU16(raw, 6);
   if (personality === 0 && checksum === 0) return null;
-  const encrypted = raw.subarray(8, 8 + 128);
-  const decrypted = decryptPkmBlock(encrypted, checksum);
-  const unshuffled = unshufflePkmBlocks(decrypted, personality, 32);
+  const stored = raw.subarray(8, 8 + 128);
+  // A matching word-sum means the block is already decrypted. Decrypting it
+  // again scrambles the Pokémon. Cartridge saves fail the sum and need a decrypt.
+  let plain = stored;
+  if (sumU16(stored) !== checksum) {
+    plain = decryptPkmBlock(stored, checksum);
+    if (sumU16(plain) !== checksum) return null;
+  }
+  const unshuffled = unshufflePkm45(plain, personality, 32);
   const speciesId = readU16(unshuffled, 0);
-  if (speciesId === 0) return null;
+  const maxSpecies = encoding === "utf16" ? 649 : 493;
+  if (speciesId === 0 || speciesId > maxSpecies) return null;
 
   const heldItemId = readU16(unshuffled, 0x02);
-  const tidU = readU16(unshuffled, 0x0c);
-  const sidU = readU16(unshuffled, 0x0e);
+  const tidU = readU16(unshuffled, 0x04);
+  const sidU = readU16(unshuffled, 0x06);
   const shiny =
     ((tidU ^ sidU ^ (personality & 0xffff) ^ (personality >>> 16)) & 0xffff) < 8;
-  const friendship = unshuffled[0x14] ?? 0;
-  const abilityId = unshuffled[0x15] ?? 0;
+  const friendship = unshuffled[0x0c] ?? 0;
+  const abilityId = unshuffled[0x0d] ?? 0;
+  const genderBits = ((unshuffled[0x38] ?? 0) >> 1) & 3;
+  const gender: "M" | "F" | "U" =
+    genderBits === 1 ? "F" : genderBits === 2 ? "U" : "M";
 
   const moveDetails: ParsedMove[] = [];
   const moves: string[] = [];
   for (let i = 0; i < 4; i++) {
-    const mid = readU16(unshuffled, 0x28 + i * 2);
+    const mid = readU16(unshuffled, 0x20 + i * 2);
     if (!mid) continue;
-    const pp = unshuffled[0x2c + i] ?? 0;
+    const pp = unshuffled[0x28 + i] ?? 0;
     const detail = moveDetail(mid, pp);
     moveDetails.push(detail);
     moves.push(detail.name);
   }
 
-  let nickname = decodeUtf16z(unshuffled, 0x48, 10);
-  // OT name: typically at 0x68 in unshuffled PK4
-  const otName = decodeUtf16z(unshuffled, 0x68, 8);
+  const nickname = readPkString(unshuffled, 0x40, 10, encoding);
+  const otName = readPkString(unshuffled, 0x60, 7, encoding);
 
-  // Met data in block D area (~0x78+): dates + location vary; use common PK4 offsets
-  // Egg date 0x78–0x7a, met date 0x7b–0x7d, egg loc 0x7e, met loc 0x80, ball 0x83, met level/OT gender 0x84
-  const metYear = unshuffled[0x7b] ?? 0;
-  const metMonth = unshuffled[0x7c] ?? 0;
-  const metDay = unshuffled[0x7d] ?? 0;
-  const metLocationId = readU16(unshuffled, 0x80);
-  const ballId = unshuffled[0x83] ?? 0;
-  const metLevelByte = unshuffled[0x84] ?? 0;
-  const metLevel = metLevelByte & 0x7f;
+  const metYear = unshuffled[0x73] ?? 0;
+  const metMonth = unshuffled[0x74] ?? 0;
+  const metDay = unshuffled[0x75] ?? 0;
+  const metLocationId = readU16(unshuffled, 0x78);
+  const ballDp = unshuffled[0x7b] ?? 0;
+  const metLevel = (unshuffled[0x7c] ?? 0) & 0x7f;
+  const ballHgss = unshuffled[0x7e] ?? 0;
+  const ballId =
+    encoding === "gen4" && ballHgss >= 1 && ballHgss <= 26 ? ballHgss : ballDp;
+  const originGame = PK4_VERSIONS[unshuffled[0x57] ?? 0] ?? null;
 
-  let level = 1;
+  const experience = readU32(unshuffled, 0x08);
+  const level = levelFromSpeciesExp(speciesId, experience);
   let currentHp = 0;
   let maxHp = 0;
   if (raw.length >= 236) {
-    level = raw[0x8c] ?? 1;
-    currentHp = readU16(raw, 0x8e);
-    maxHp = readU16(raw, 0x90);
+    const stats = raw.subarray(0x88, 0xec);
+    const decryptedStats = decryptPkmBlock(stats, personality);
+    const statsView =
+      decryptedStats[4] === level
+        ? decryptedStats
+        : (raw[0x8c] ?? 0) === level
+          ? stats
+          : null;
+    if (statsView) {
+      currentHp = readU16(statsView, 6);
+      maxHp = readU16(statsView, 8);
+    }
   }
 
   const ball = ballName(ballId);
   const heldItem = heldItemId ? itemName(heldItemId, 4) || null : null;
   const caughtAt = formatMetDate(metYear, metMonth, metDay);
-  const metLocation =
-    metLocationId > 0 ? `Location #${metLocationId}` : null;
+  const metLocation = metLocationId > 0 ? `Location #${metLocationId}` : null;
 
   const originParts: string[] = [];
   if (metLocation && metLevel) {
@@ -419,6 +513,7 @@ export function parsePk4Box(raw: Uint8Array, slot: number): ParsedPokemon | null
   }
   if (ball) originParts.push(ball);
   if (caughtAt) originParts.push(caughtAt);
+  if (otName) originParts.push(`OT ${otName}`);
 
   return {
     slot,
@@ -428,7 +523,7 @@ export function parsePk4Box(raw: Uint8Array, slot: number): ParsedPokemon | null
     level,
     currentHp,
     maxHp,
-    gender: genderFromPid(personality),
+    gender,
     shiny,
     ability: abilityName(abilityId) || "",
     nature: natureName(personality % 25),
@@ -443,16 +538,16 @@ export function parsePk4Box(raw: Uint8Array, slot: number): ParsedPokemon | null
     metLevel: metLevel || null,
     metLocation,
     metLocationId: metLocationId || null,
-    originGame: null,
+    originGame,
     originKind: metLevel === 0 ? "egg" : "unknown",
     caughtAt,
     otName,
   };
 }
 
-/** PK5 boxed is also 136 bytes; party 220. Same decrypt as PK4 for the encrypted region. */
+/** PK5 boxed is also 136 bytes; party 220. Same block crypto as PK4, Unicode names. */
 export function parsePk5Box(raw: Uint8Array, slot: number): ParsedPokemon | null {
-  return parsePk4Box(raw, slot);
+  return parsePk4Box(raw, slot, "utf16");
 }
 
 /** CRC-16-CCITT (poly 0x1021, init 0xFFFF) used by Gen 4/5 block footers. */

@@ -101,6 +101,110 @@ export function decodeGen3String(bytes: Uint8Array, maxLen?: number): string {
   return out.trimEnd();
 }
 
+/**
+ * Generation IV character set (Bulbapedia). Code units are little-endian
+ * u16 values, terminated by 0xFFFF or 0x0000. Halfwidth Latin lives at
+ * 0x0121–0x015E; kana lives at 0x0002–0x00A1.
+ */
+const GEN4_KANA =
+  "ぁあぃいぅうぇえぉおかがきぎ" +
+  "くぐけげこごさざしじすずせぜそぞ" +
+  "ただちぢっつづてでとどなにぬねの" +
+  "はばぱひびぴふぶぷへべぺほぼぽま" +
+  "みむめもゃやゅゆょよらりるれろわ" +
+  "をんァアィイゥウェエォオカガキギ" +
+  "クグケゲコゴサザシジスズセゼソゾ" +
+  "タダチヂッツヅテデトドナニヌネノ" +
+  "ハバパヒビピフブプヘベペホボポマ" +
+  "ミムメモャヤュユョヨラリルレロワ" +
+  "ヲン";
+
+/** 0x015F À through 0x01A4 º. */
+const GEN4_ACCENT =
+  "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿŒœŞşªº";
+
+const GEN4_SYMBOLS: Record<number, string> = {
+  0x0120: "＆",
+  0x00e1: "！",
+  0x00e2: "？",
+  0x00e4: "…",
+  0x00e5: "・",
+  0x00ee: "♂",
+  0x00ef: "♀",
+  0x01a5: "er",
+  0x01a6: "re",
+  0x01a7: "r",
+  0x01a9: "¡",
+  0x01aa: "¿",
+  0x01ab: "!",
+  0x01ac: "?",
+  0x01ad: ",",
+  0x01ae: ".",
+  0x01af: "…",
+  0x01b0: "･",
+  0x01b1: "/",
+  0x01b2: "‘",
+  0x01b3: "'",
+  0x01b4: "“",
+  0x01b5: "”",
+  0x01b9: "(",
+  0x01ba: ")",
+  0x01bb: "♂",
+  0x01bc: "♀",
+  0x01bd: "+",
+  0x01be: "-",
+  0x01bf: "*",
+  0x01c0: "#",
+  0x01c1: "=",
+  0x01c2: "&",
+  0x01c3: "~",
+  0x01c4: ":",
+  0x01c5: ";",
+};
+
+export function gen4Char(code: number): string {
+  if (code >= 0x0002 && code <= 0x00a1) return GEN4_KANA[code - 0x0002] ?? "";
+  if (code >= 0x00a2 && code <= 0x00ab) {
+    return String.fromCharCode(0xff10 + (code - 0x00a2));
+  }
+  if (code >= 0x00ac && code <= 0x00c5) {
+    return String.fromCharCode(0xff21 + (code - 0x00ac));
+  }
+  if (code >= 0x00c6 && code <= 0x00df) {
+    return String.fromCharCode(0xff41 + (code - 0x00c6));
+  }
+  if (code >= 0x0121 && code <= 0x012a) {
+    return String.fromCharCode(0x30 + (code - 0x0121));
+  }
+  if (code >= 0x012b && code <= 0x0144) {
+    return String.fromCharCode(0x41 + (code - 0x012b));
+  }
+  if (code >= 0x0145 && code <= 0x015e) {
+    return String.fromCharCode(0x61 + (code - 0x0145));
+  }
+  if (code >= 0x015f && code < 0x015f + GEN4_ACCENT.length) {
+    return GEN4_ACCENT[code - 0x015f] ?? "";
+  }
+  return GEN4_SYMBOLS[code] ?? "";
+}
+
+/** Decode a Gen 4 string. `data` is the save or Pokémon buffer. */
+export function decodeGen4String(
+  data: Uint8Array,
+  offset: number,
+  maxChars: number
+): string {
+  let out = "";
+  for (let i = 0; i < maxChars; i++) {
+    const at = offset + i * 2;
+    if (at + 1 >= data.length) break;
+    const code = data[at]! | (data[at + 1]! << 8);
+    if (code === 0xffff || code === 0) break;
+    out += gen4Char(code);
+  }
+  return out;
+}
+
 /** Encode ASCII-ish text into Gen 3 bytes (for fixtures). */
 export function encodeGen3String(text: string, length: number): Uint8Array {
   const reverse = new Map<string, number>();
