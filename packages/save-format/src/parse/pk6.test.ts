@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
+import { levelFromSpeciesExp } from "./exp.js";
+import { speciesName } from "./species.js";
 import {
   decryptPk6,
   encryptPk6,
@@ -96,5 +98,25 @@ describe("PK6 crypto", () => {
 
   it("treats an all-zero slot as empty", () => {
     assert.equal(parsePk6(new Uint8Array(PK6_PARTY), 0), null);
+  });
+
+  it("derives a boxed Pokémon's level from experience", () => {
+    assert.equal(levelFromSpeciesExp(717, 156250), 50);
+    assert.equal(levelFromSpeciesExp(661, 2594), 16);
+    assert.equal(levelFromSpeciesExp(25, 8000), 20);
+    assert.equal(speciesName(661), "Fletchling");
+    assert.equal(speciesName(658), "Greninja");
+
+    const plain = makePlainPk6({ species: 25, level: 1 });
+    writeU32(plain, 0x10, 8000);
+    let sum = 0;
+    for (let i = 8; i < PK6_STORED; i += 2) {
+      sum = (sum + (plain[i]! | (plain[i + 1]! << 8))) & 0xffff;
+    }
+    writeU16(plain, 6, sum);
+    const stored = encryptPk6(plain.subarray(0, PK6_STORED));
+    const mon = parsePk6(stored, 2);
+    assert.ok(mon);
+    assert.equal(mon.level, 20);
   });
 });

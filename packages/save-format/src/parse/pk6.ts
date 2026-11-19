@@ -11,6 +11,7 @@ import { itemName } from "./items.js";
 import { gen6LocationName } from "./locations-gen6.js";
 import { moveDetail, moveName } from "./moves.js";
 import { natureName } from "./natures.js";
+import { levelFromSpeciesExp } from "./exp.js";
 import { speciesName } from "./species.js";
 import { speciesAbilityName, speciesTypes } from "./species-meta.js";
 import type { ParsedPokemon } from "./types.js";
@@ -200,7 +201,11 @@ export function parsePk6(
   const ballId = pkx[0xdc] ?? 0;
   const metLocationId = readU16(pkx, 0xd8);
   const metLevel = (pkx[0xdd] ?? 0) & 0x7f;
-  const level = ekx.length >= PK6_PARTY ? (pkx[0xec] ?? 1) : 1;
+  const exp = readU32(pkx, 0x10);
+  const partyLevel = ekx.length >= PK6_PARTY ? (pkx[0xec] ?? 0) : 0;
+  // Box slots have no party stat block. Their level lives in the experience field.
+  const level =
+    partyLevel > 0 ? partyLevel : levelFromSpeciesExp(speciesId, exp);
   const currentHp =
     ekx.length >= PK6_PARTY ? readU16(pkx, 0xf0) : 0;
   const maxHp = ekx.length >= PK6_PARTY ? readU16(pkx, 0xf2) : 0;

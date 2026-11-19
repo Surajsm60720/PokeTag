@@ -168,22 +168,26 @@ function parseDex(
   for (let i = 0; i < MAX_SPECIES; i++) {
     const bd = i >> 3;
     const mask = 1 << (i & 7);
-    if ((bytes[flags + bd]! & mask) !== 0) {
-      owned[bd]! |= mask;
-    } else if (!oras && i < 649) {
+    let isOwned = (bytes[flags + bd]! & mask) !== 0;
+    if (!isOwned && !oras && i < 649) {
       const foreign = flags + bd + XY_FOREIGN_OWNED;
-      if (foreign < bytes.length && (bytes[foreign]! & mask) !== 0) {
-        owned[bd]! |= mask;
-      }
+      isOwned = foreign < bytes.length && (bytes[foreign]! & mask) !== 0;
     }
-    for (let region = 1; region <= 4; region++) {
-      if ((bytes[flags + bd + region * DEX_BR_SIZE]! & mask) !== 0) {
+    if (isOwned) {
+      owned[bd]! |= mask;
+      seen[bd]! |= mask;
+    }
+    // Regions 1–4 are the gender/shiny seen flags. 5–8 are the dex display
+    // flags; a completed or cheated dex often sets those without the seen bits.
+    for (let region = 1; region <= 8; region++) {
+      const at = flags + bd + region * DEX_BR_SIZE;
+      if (at < bytes.length && (bytes[at]! & mask) !== 0) {
         seen[bd]! |= mask;
         break;
       }
     }
   }
-  return countDexBits(owned, seen, MAX_SPECIES);
+  return countDexBits(owned, seen, MAX_SPECIES, MAX_SPECIES);
 }
 
 type PocketKind = ParsedBagItem["pocket"];
@@ -199,7 +203,8 @@ function readPouch(
     const id = readU16LE(bytes, off);
     const quantity = readU16LE(bytes, off + 2);
     if (id === 0) continue;
-    if (quantity === 0 || quantity > 999) continue;
+    // In-game stacks stop at 999. Cheat saves use larger counts; keep them.
+    if (quantity === 0 || quantity > 65000) continue;
     out.push({
       id,
       name: itemName(id) || `Item #${id}`,

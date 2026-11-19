@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ParsedBox } from "@/lib/parsed";
 import { SpriteImage } from "./SpriteImage";
+import { SummaryTabs } from "./SummaryTabs";
 
 export function BoxGrid({ boxes }: { boxes: ParsedBox[] }) {
   const [boxIndex, setBoxIndex] = useState(0);
@@ -52,18 +53,25 @@ export function BoxGrid({ boxes }: { boxes: ParsedBox[] }) {
             data-selected={selectedCell === i && Boolean(mon)}
             disabled={!mon}
             onClick={() => setSelectedCell(i)}
-            aria-label={mon ? mon.nickname || mon.speciesName : `Empty ${i + 1}`}
+            aria-label={
+              mon
+                ? `${mon.nickname || mon.speciesName}, level ${mon.level}`
+                : `Empty ${i + 1}`
+            }
           >
             {mon ? (
-              <SpriteImage
-                alt={mon.nickname || mon.speciesName}
-                speciesId={mon.speciesId}
-                types={mon.types}
-                shiny={mon.shiny}
-                width={40}
-                height={40}
-                loading="lazy"
-              />
+              <>
+                <SpriteImage
+                  alt=""
+                  speciesId={mon.speciesId}
+                  types={mon.types}
+                  shiny={mon.shiny}
+                  width={40}
+                  height={40}
+                  loading="lazy"
+                />
+                <span className="box-grid__lv">{mon.level}</span>
+              </>
             ) : (
               <span className="box-grid__empty" />
             )}
@@ -73,16 +81,7 @@ export function BoxGrid({ boxes }: { boxes: ParsedBox[] }) {
 
       <div className="box-grid__info">
         {selected ? (
-          <>
-            <strong>
-              {selected.nickname || selected.speciesName}
-              {selected.shiny ? " ★" : ""}
-            </strong>
-            <span className="muted">
-              {selected.speciesName} · Lv{selected.level} ·{" "}
-              {selected.types.join("/")}
-            </span>
-          </>
+          <SummaryTabs pokemon={selected} />
         ) : (
           <span className="muted">Pick a Pokémon in the box.</span>
         )}

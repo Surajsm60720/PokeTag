@@ -119,4 +119,26 @@ describe("parseGen6 dex / location / bag", () => {
     assert.equal(parsed.dex.seen, 1);
     assert.equal(parsed.dex.entries[0]?.speciesId, 1);
   });
+
+  it("keeps cheat-sized stacks and every seen national dex entry", () => {
+    const data = Buffer.alloc(0x65600, 0);
+    data[0x14004] = 25;
+    writeU16(data, 0x00400, 50); // Rare Candy
+    writeU16(data, 0x00402, 9000);
+
+    const flags = 0x15000 + 0x08;
+    for (let i = 0; i < 30; i++) setBit(data, flags + 0x60, i);
+    // Display flag only — no gender/shiny seen bit.
+    setBit(data, flags + 5 * 0x60, 200);
+
+    const parsed = parseGen6(data, detectSave(data, "main"));
+    const candy = parsed.inventory.bag.find((item) => item.id === 50);
+    assert.ok(candy);
+    assert.equal(candy.quantity, 9000);
+    assert.equal(parsed.dex.seen, 31);
+    assert.equal(parsed.dex.entries.length, 31);
+    assert.equal(parsed.dex.entries[0]?.speciesId, 1);
+    assert.equal(parsed.dex.entries[29]?.speciesId, 30);
+    assert.equal(parsed.dex.entries[30]?.speciesId, 201);
+  });
 });
