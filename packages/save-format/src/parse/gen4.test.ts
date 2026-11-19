@@ -4,6 +4,7 @@ import { describe, it } from "node:test";
 import { detectSave } from "../detect.js";
 import { decodeGen4String, gen4Char } from "./charset.js";
 import { parseGen4 } from "./gen4.js";
+import { hgssMapName } from "./hgss-maps.js";
 import { crc16Ccitt, parsePk4Box } from "./pkm.js";
 import { levelFromSpeciesExp } from "./exp.js";
 
@@ -46,6 +47,7 @@ describe("parseGen4 HeartGold", () => {
     general[0x94] = 0;
     general.writeUInt16LE(17, 0x644);
     general.writeUInt16LE(5, 0x646);
+    general.writeUInt16LE(67, 0x1234);
     general[0x12bc] = 0b0000_0001;
     general[0x12fc] = 0b0000_0011;
     seal(general);
@@ -69,6 +71,16 @@ describe("parseGen4 HeartGold", () => {
     assert.equal(potion.quantity, 5);
     assert.equal(potion.pocket, "items");
     assert.equal(potion.name, "Potion");
+    assert.equal(parsed.location, "Cherrygrove City");
+    assert.equal(parsed.locationMapId, 67);
+  });
+
+  it("names HeartGold and SoulSilver maps", () => {
+    assert.equal(hgssMapName(67), "Cherrygrove City");
+    assert.equal(hgssMapName(60), "New Bark Town");
+    assert.equal(hgssMapName(33), "Route 29");
+    assert.equal(hgssMapName(69), "Cherrygrove City, Pokémon Center");
+    assert.equal(hgssMapName(9999), "Map 9999");
   });
 
   it("reads a HeartGold block whose CRC is stale but whose footer still matches", () => {

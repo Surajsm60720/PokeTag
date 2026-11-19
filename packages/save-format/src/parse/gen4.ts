@@ -10,6 +10,7 @@
 import type { DetectionResult, GameVersion } from "../types.js";
 import { badgesFromBitmask } from "./badges.js";
 import { decodeGen4String } from "./charset.js";
+import { hgssMapName } from "./hgss-maps.js";
 import { itemName } from "./items.js";
 import { crc16Ccitt, parsePk4Box } from "./pkm.js";
 import type { ParsedBagItem, ParsedInventory, ParsedPokemon, ParsedSave } from "./types.js";
@@ -343,7 +344,7 @@ export function parseGen4(
       layout.kantoBadges != null ? 16 : 8
     ),
     playTimeSeconds: hours * 3600 + minutes * 60 + seconds,
-    location: mapId ? `Map ${mapId}` : "",
+    location: layout.id === "hgss" ? hgssMapName(mapId) : mapId ? `Map ${mapId}` : "",
     locationMapId: mapId || null,
     inventory: layout.bag ? parseInventory(general, layout.bag) : { bag: [], pc: [] },
     progress: {
