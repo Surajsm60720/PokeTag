@@ -25,6 +25,8 @@ const RELEASE_ORDER: Record<string, number> = {
   moon: 200,
   ultrasun: 210,
   ultramoon: 220,
+  letsgopikachu: 222,
+  letsgoeevee: 223,
   sword: 230,
   shield: 240,
   brilliantdiamond: 250,

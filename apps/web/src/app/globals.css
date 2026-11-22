@@ -1578,6 +1578,20 @@ html[data-platform="ds"] .dual-screen {
   --cart-label: #f0f0ff;
   --cart-stripe: #48e0d0;
 }
+.cartridge[data-game="letsgopikachu"] {
+  --cart-body: #f5d030;
+  --cart-hi: #ffe878;
+  --cart-lo: #b88810;
+  --cart-label: #3a2810;
+  --cart-stripe: #e05040;
+}
+.cartridge[data-game="letsgoeevee"] {
+  --cart-body: #c89058;
+  --cart-hi: #e0b888;
+  --cart-lo: #785030;
+  --cart-label: #fff8f0;
+  --cart-stripe: #58a070;
+}
 .cartridge[data-game="sword"] {
   --cart-body: #2956c7;
   --cart-hi: #4a78e0;

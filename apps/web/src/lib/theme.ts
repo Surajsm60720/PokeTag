@@ -22,6 +22,8 @@ export const GAME_THEMES = [
   "moon",
   "ultrasun",
   "ultramoon",
+  "letsgopikachu",
+  "letsgoeevee",
   "sword",
   "shield",
   "brilliantdiamond",
@@ -42,6 +44,7 @@ export type ThemeEra =
   | "gen6-kalos"
   | "gen6-hoenn"
   | "gen7-alola"
+  | "gen7-kanto"
   | "gen8-galar"
   | "gen8-sinnoh"
   | "gen8-hisui"
@@ -96,6 +99,9 @@ export function themeEra(theme: string): ThemeEra {
     case "ultrasun":
     case "ultramoon":
       return "gen7-alola";
+    case "letsgopikachu":
+    case "letsgoeevee":
+      return "gen7-kanto";
     case "sword":
     case "shield":
       return "gen8-galar";
@@ -128,6 +134,7 @@ export function themePlatform(theme: string): ThemePlatform {
     return "3ds";
   }
   if (
+    era === "gen7-kanto" ||
     era === "gen8-galar" ||
     era === "gen8-sinnoh" ||
     era === "gen8-hisui" ||
@@ -144,6 +151,7 @@ export function cartForm(
   theme: string
 ): CartForm {
   if (theme === "pokkentournamentdx") return "switch";
+  if (theme === "letsgopikachu" || theme === "letsgoeevee") return "switch";
   if (generation === 6 || generation === 7) return "3ds";
   if (generation === 8 || generation === 9) return "switch";
   if (generation === 4 || generation === 5) return "ds";

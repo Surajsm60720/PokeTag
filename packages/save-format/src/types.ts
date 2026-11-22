@@ -32,6 +32,8 @@ export type GameVersion =
   | "moon"
   | "ultrasun"
   | "ultramoon"
+  | "letsgopikachu"
+  | "letsgoeevee"
   | "sword"
   | "shield"
   | "brilliantdiamond"

@@ -650,6 +650,57 @@ html[data-era="gen8-hisui"] {
   --cart-stripe: #48e0d0;
 }
 
+/* Gen 7 — Let's Go (Switch, Kanto) */
+[data-theme="letsgopikachu"] {
+  --color-accent: #f5d030;
+  --color-accent-alt: #e05040;
+  --color-cream: #fff8e0;
+  --color-ink: #3a2810;
+  --color-panel: rgba(255, 248, 224, 0.92);
+  --color-panel-solid: #fff8e0;
+  --color-glass: rgba(255, 248, 224, 0.28);
+  --color-bevel-light: #fffdf0;
+  --color-bevel-dark: #a87818;
+  --color-bg-a: #ffe068;
+  --color-bg-b: #e8a020;
+  --color-grass-light: #78c878;
+  --color-grass-dark: #388848;
+  --color-sky: #88c8f0;
+  --color-wood: #c89840;
+  --color-wood-dark: #785820;
+  --color-wood-light: #e8c070;
+  --cart-body: #f5d030;
+  --cart-hi: #ffe878;
+  --cart-lo: #b88810;
+  --cart-label: #3a2810;
+  --cart-stripe: #e05040;
+}
+
+[data-theme="letsgoeevee"] {
+  --color-accent: #c89058;
+  --color-accent-alt: #58a070;
+  --color-cream: #f8f0e4;
+  --color-ink: #3a2818;
+  --color-panel: rgba(248, 240, 228, 0.92);
+  --color-panel-solid: #f8f0e4;
+  --color-glass: rgba(248, 240, 228, 0.28);
+  --color-bevel-light: #fff8f0;
+  --color-bevel-dark: #785838;
+  --color-bg-a: #e0b888;
+  --color-bg-b: #986848;
+  --color-grass-light: #88b878;
+  --color-grass-dark: #487848;
+  --color-sky: #b8d0e8;
+  --color-wood: #a87848;
+  --color-wood-dark: #584028;
+  --color-wood-light: #d0a878;
+  --cart-body: #c89058;
+  --cart-hi: #e0b888;
+  --cart-lo: #785030;
+  --cart-label: #fff8f0;
+  --cart-stripe: #58a070;
+}
+
 /* Gen 8 — Galar / BDSP / Hisui (Switch) */
 [data-theme="sword"] {
   --color-accent: #2956c7;

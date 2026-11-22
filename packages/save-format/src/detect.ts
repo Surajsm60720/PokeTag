@@ -2,6 +2,7 @@ import {
   desmumePayloadLength,
   hasDesmumeFooter,
 } from "./desmume.js";
+import { isLgpeSave, peekLgpeGame } from "./parse/gen7b.js";
 import type {
   DetectionResult,
   GameVersion,
@@ -10,7 +11,9 @@ import type {
 } from "./types.js";
 
 const GBA_SIZES = new Set([0x8000, 0x10000, 0x20000]);
+/** Gen 4/5 NDS sizes. 0x100000 is also a padded LGPE dump — check LGPE first. */
 const DS_SIZES = new Set([0x40000, 0x80000, 0x100000]);
+const LGPE_SIZE = 0xb8800;
 
 /**
  * Decrypted 3DS / Switch "main" (and close cousins) sizes used by PKHeX / Citra /
@@ -37,6 +40,12 @@ const MODERN_SAVE_SIZES: Array<{
     generation: 7,
     softGame: "ultrasun",
     note: "Gen 7 USUM-sized main",
+  },
+  {
+    size: LGPE_SIZE,
+    generation: 7,
+    softGame: "letsgopikachu",
+    note: "Gen 7 Let's Go (SAV7b) main",
   },
 ];
 
@@ -65,7 +74,14 @@ const GEN4 = new Set<GameVersion>([
 ]);
 const GEN5 = new Set<GameVersion>(["black", "white", "black2", "white2"]);
 const GEN6 = new Set<GameVersion>(["x", "y", "omegaruby", "alphasapphire"]);
-const GEN7 = new Set<GameVersion>(["sun", "moon", "ultrasun", "ultramoon"]);
+const GEN7 = new Set<GameVersion>([
+  "sun",
+  "moon",
+  "ultrasun",
+  "ultramoon",
+  "letsgopikachu",
+  "letsgoeevee",
+]);
 const GEN8 = new Set<GameVersion>([
   "sword",
   "shield",
@@ -115,6 +131,21 @@ const FILENAME_GAMES: Array<{ needle: string; game: GameVersion }> = [
   { needle: "ultra-moon", game: "ultramoon" },
   { needle: "ultra_moon", game: "ultramoon" },
   { needle: "ultra moon", game: "ultramoon" },
+  { needle: "letsgopikachu", game: "letsgopikachu" },
+  { needle: "lets-go-pikachu", game: "letsgopikachu" },
+  { needle: "lets_go_pikachu", game: "letsgopikachu" },
+  { needle: "let's go pikachu", game: "letsgopikachu" },
+  { needle: "lets go pikachu", game: "letsgopikachu" },
+  { needle: "lgpikachu", game: "letsgopikachu" },
+  { needle: "letsgoeevee", game: "letsgoeevee" },
+  { needle: "lets-go-eevee", game: "letsgoeevee" },
+  { needle: "lets_go_eevee", game: "letsgoeevee" },
+  { needle: "let's go eevee", game: "letsgoeevee" },
+  { needle: "lets go eevee", game: "letsgoeevee" },
+  { needle: "lgeevee", game: "letsgoeevee" },
+  { needle: "lgpe", game: "letsgopikachu" },
+  { needle: "lgp", game: "letsgopikachu" },
+  { needle: "lge", game: "letsgoeevee" },
   { needle: "brilliantdiamond", game: "brilliantdiamond" },
   { needle: "brilliant-diamond", game: "brilliantdiamond" },
   { needle: "brilliant_diamond", game: "brilliantdiamond" },
@@ -243,6 +274,10 @@ function guessGeneration(payloadSize: number, game: GameVersion): Generation {
   if (GBA_SIZES.has(payloadSize) || GBA_SIZES.has(payloadSize - 16)) {
     return 3;
   }
+  // Padded LGPE dumps are 1MB — same as some Gen 4 carts. Prefer LGPE when marked.
+  if (game === "letsgopikachu" || game === "letsgoeevee") {
+    return 7;
+  }
   if (DS_SIZES.has(payloadSize)) {
     return 4;
   }
@@ -273,6 +308,8 @@ function gameLabel(game: GameVersion, generation: Generation): string {
     moon: "Pokémon Moon",
     ultrasun: "Pokémon Ultra Sun",
     ultramoon: "Pokémon Ultra Moon",
+    letsgopikachu: "Pokémon: Let's Go, Pikachu!",
+    letsgoeevee: "Pokémon: Let's Go, Eevee!",
     sword: "Pokémon Sword",
     shield: "Pokémon Shield",
     brilliantdiamond: "Pokémon Brilliant Diamond",
@@ -303,6 +340,7 @@ export function detectSave(
   const dsvFooter = hasDesmumeFooter(data);
   const payloadSize = dsvFooter ? desmumePayloadLength(data) : data.length;
   const modern = modernSizeMatch(payloadSize);
+  const lgpe = isLgpeSave(data, payloadSize);
 
   let format: SaveFormat = "unknown";
   if (dsvFooter || ext === "dsv") {
@@ -317,6 +355,8 @@ export function detectSave(
     format = "np";
   } else if (ext === "main") {
     format = "main";
+  } else if (lgpe) {
+    format = "main";
   } else if (
     ext === "sav" ||
     GBA_SIZES.has(payloadSize) ||
@@ -328,6 +368,9 @@ export function detectSave(
 
   if (GBA_SIZES.has(payloadSize - 16)) {
     notes.push("Possible GBA RTC trailing bytes.");
+  }
+  if (lgpe && payloadSize === 0x100000) {
+    notes.push("Padded Let's Go save (1MB dump of 0xB8800 SAV7b).");
   }
 
   const gen3 =
@@ -341,8 +384,23 @@ export function detectSave(
     notes.push(`Game inferred from label (${fromHint}).`);
   }
 
+  // Let's Go (SAV7b) before Gen 4 size heuristics — 1MB dumps collide.
+  const fromLgpe = lgpe ? peekLgpeGame(data) : null;
+  if (fromLgpe) {
+    if (gameVersion === "unknown" || gameVersion !== fromLgpe) {
+      if (gameVersion !== "unknown" && gameVersion !== fromLgpe) {
+        notes.push(
+          `Filename/label said ${gameVersion}, but save header is ${fromLgpe}.`
+        );
+      } else if (gameVersion === "unknown") {
+        notes.push(`Game read from Let's Go MyStatus (${fromLgpe}).`);
+      }
+      gameVersion = fromLgpe;
+    }
+  }
+
   // Decrypted Gen 6/7 mains store the PKHeX GameVersion byte in MyStatus.
-  const fromStatus = peekGen6GameByte(data, payloadSize);
+  const fromStatus = lgpe ? null : peekGen6GameByte(data, payloadSize);
   if (fromStatus) {
     if (gameVersion === "unknown" || gameVersion !== fromStatus) {
       if (gameVersion !== "unknown" && gameVersion !== fromStatus) {
@@ -354,6 +412,9 @@ export function detectSave(
       }
       gameVersion = fromStatus;
     }
+  } else if (gameVersion === "unknown" && lgpe) {
+    gameVersion = "letsgopikachu";
+    notes.push("Let's Go SAV7b detected; defaulting to Let's Go Pikachu.");
   } else if (gameVersion === "unknown" && modern?.softGame) {
     // Size can pin the family when the name is just "main".
     gameVersion = modern.softGame;
@@ -378,6 +439,7 @@ export function detectSave(
     GBA_SIZES.has(payloadSize - 16) ||
     DS_SIZES.has(payloadSize) ||
     Boolean(modern) ||
+    lgpe ||
     dsvFooter ||
     modernKnown ||
     format === "np";

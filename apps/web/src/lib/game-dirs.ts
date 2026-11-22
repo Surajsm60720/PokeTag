@@ -362,6 +362,32 @@ export const GAME_DIRS: Record<string, GameDirInfo> = {
     productCode: "A2BA",
     paths: citraPaths("001b5100", "Pokémon Ultra Moon"),
   },
+  letsgopikachu: {
+    gameVersion: "letsgopikachu",
+    platform: "switch",
+    titleId: "010003F003A34000",
+    paths: [
+      ...switchPaths("010003F003A34000", "Pokémon Let's Go Pikachu"),
+      {
+        label: "Exported dump",
+        path: `…/savedata.bin`,
+        note: "Checkpoint / JKSV / Ryujinx often export as savedata.bin (~1MB padded).",
+      },
+    ],
+  },
+  letsgoeevee: {
+    gameVersion: "letsgoeevee",
+    platform: "switch",
+    titleId: "0100187003A36000",
+    paths: [
+      ...switchPaths("0100187003A36000", "Pokémon Let's Go Eevee"),
+      {
+        label: "Exported dump",
+        path: `…/savedata.bin`,
+        note: "Checkpoint / JKSV / Ryujinx often export as savedata.bin (~1MB padded).",
+      },
+    ],
+  },
   sword: {
     gameVersion: "sword",
     platform: "switch",
@@ -448,6 +474,8 @@ export function shortGameName(gameVersion: string): string {
     moon: "Moon",
     ultrasun: "Ultra Sun",
     ultramoon: "Ultra Moon",
+    letsgopikachu: "Let's Go Pikachu",
+    letsgoeevee: "Let's Go Eevee",
     sword: "Sword",
     shield: "Shield",
     brilliantdiamond: "Brilliant Diamond",

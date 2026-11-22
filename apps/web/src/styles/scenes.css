@@ -1064,7 +1064,8 @@ html[data-era="gen7-alola"] .world__flora {
 }
 
 html[data-theme="sun"] .world,
-html[data-theme="ultrasun"] .world {
+html[data-theme="ultrasun"] .world,
+html[data-theme="letsgopikachu"] .world {
   background:
     radial-gradient(circle 90px at 80% 12%, #fff6c0 0 30%, #ffd060 45%, transparent 70%),
     linear-gradient(

@@ -152,6 +152,8 @@ function listForGame(game: GameVersion): readonly string[] {
     case "violet":
       return PALDEA;
     case "legendsarceus":
+    case "letsgopikachu":
+    case "letsgoeevee":
     case "pokkentournamentdx":
       return [];
     default:

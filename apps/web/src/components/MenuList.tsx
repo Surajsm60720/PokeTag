@@ -21,6 +21,18 @@ export function MenuList({
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      const target = e.target;
+      if (
+        target instanceof HTMLElement &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
       if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
         e.preventDefault();
         setIndex((i) => Math.min(items.length - 1, i + 1));

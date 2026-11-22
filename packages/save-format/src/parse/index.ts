@@ -5,6 +5,7 @@ import { parseGen4 } from "./gen4.js";
 import { parseGen5 } from "./gen5.js";
 import { parseGen6 } from "./gen6.js";
 import { parseGen7 } from "./gen7.js";
+import { isLgpeSave, parseGen7b } from "./gen7b.js";
 import { parseGen8 } from "./gen8.js";
 import { parseGen9 } from "./gen9.js";
 import { parsePokken } from "./pokken.js";
@@ -51,6 +52,15 @@ export function parseSave(
 
   if (detection.gameVersion === "pokkentournamentdx") {
     return parsePokken(payload, detection);
+  }
+
+  // Padded LGPE dumps are 1MB and can look like Gen 4 by size alone.
+  if (
+    isLgpeSave(payload) ||
+    detection.gameVersion === "letsgopikachu" ||
+    detection.gameVersion === "letsgoeevee"
+  ) {
+    return parseGen7b(payload, detection);
   }
 
   const gen = detection.generation;

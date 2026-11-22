@@ -55,6 +55,8 @@ export function gameDisplayName(gameVersion: string, fallback?: string): string 
     moon: "Pokémon Moon",
     ultrasun: "Pokémon Ultra Sun",
     ultramoon: "Pokémon Ultra Moon",
+    letsgopikachu: "Pokémon: Let's Go, Pikachu!",
+    letsgoeevee: "Pokémon: Let's Go, Eevee!",
     sword: "Pokémon Sword",
     shield: "Pokémon Shield",
     brilliantdiamond: "Pokémon Brilliant Diamond",

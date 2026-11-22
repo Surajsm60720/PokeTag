@@ -168,18 +168,20 @@ function genderFromPid(pid: number): "M" | "F" | "U" {
 }
 
 /**
- * Parse one encrypted PK6 slot. Returns null for empty / corrupt checksums.
+ * Parse one encrypted PK6 / PB7 slot. Returns null for empty / corrupt checksums.
+ * PB7 (Let's Go) reuses Gen 6 crypto; pass `maxSpecies` 809 for Meltan/Melmetal.
  */
 export function parsePk6(
   ekx: Uint8Array,
-  slot: number
+  slot: number,
+  maxSpecies = 721
 ): ParsedPokemon | null {
   const pkx = decryptPk6(ekx);
   if (!pkx) return null;
   if (!pk6ChecksumOk(pkx)) return null;
 
   const speciesId = readU16(pkx, 0x08);
-  if (speciesId === 0 || speciesId > 721) return null;
+  if (speciesId === 0 || speciesId > maxSpecies) return null;
 
   const heldItemId = readU16(pkx, 0x0a);
   const abilityId = pkx[0x14] ?? 0;
