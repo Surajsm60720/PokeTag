@@ -122,6 +122,8 @@ function listForGame(game: GameVersion): readonly string[] {
       return HOENN;
     case "firered":
     case "leafgreen":
+    case "letsgopikachu":
+    case "letsgoeevee":
       return KANTO;
     case "diamond":
     case "pearl":
@@ -152,8 +154,6 @@ function listForGame(game: GameVersion): readonly string[] {
     case "violet":
       return PALDEA;
     case "legendsarceus":
-    case "letsgopikachu":
-    case "letsgoeevee":
     case "pokkentournamentdx":
       return [];
     default:

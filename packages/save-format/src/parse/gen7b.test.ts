@@ -33,7 +33,7 @@ describe("LGPE / SAV7b detection + parse", () => {
     assert.match(detected.label, /Let's Go.*Pikachu/i);
   });
 
-  it("parses trainer, party Pikachu, play time, and boxes", () => {
+  it("parses trainer, party Pikachu, dex, bag, location, and badges", () => {
     const buf = loadSave();
     if (!buf) return;
 
@@ -54,12 +54,34 @@ describe("LGPE / SAV7b detection + parse", () => {
     assert.ok(starter.level >= 1);
     assert.ok(starter.moves.length >= 1);
 
+    // Party storage index 0 must not also appear in the PC.
+    const boxMons = parsed.boxes.flatMap((b) =>
+      b.pokemon.filter((p) => p != null)
+    );
+    assert.equal(boxMons.length, 0);
+
     // ~21m play time from the dump header
     assert.ok(parsed.playTimeSeconds >= 60);
     assert.ok(parsed.playTimeSeconds < 3600);
 
     assert.equal(parsed.boxes.length, 40);
-    assert.equal(parsed.dex.owned >= 1, true);
+    assert.equal(parsed.dex.owned, 1);
+    assert.ok(parsed.dex.seen >= 4, `seen=${parsed.dex.seen}`);
+    assert.ok(
+      parsed.inventory.bag.some((i) => i.name === "Health Candy"),
+      "LGPE candy names should resolve"
+    );
+    assert.ok(
+      parsed.inventory.bag.every((i) => !i.name.startsWith("Item #")),
+      "bag should not show raw Item # ids"
+    );
+    assert.equal(parsed.badges.length, 8);
+    assert.equal(
+      parsed.badges.filter((b) => b.earned).length,
+      0,
+      "early save has no gym badges"
+    );
+    assert.equal(parsed.location, "Viridian City");
   });
 
   it("parseSave routes padded LGPE even if filename is generic", () => {
