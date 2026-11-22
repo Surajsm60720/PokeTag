@@ -1,3 +1,4 @@
+import { ensureParsed } from "@/lib/parse-job";
 import {
   deleteSlot,
   getSlot,
@@ -14,10 +15,21 @@ export async function GET(
 ) {
   try {
     const { slotId } = await context.params;
-    const slot = await getSlot(slotId);
+    let slot = await getSlot(slotId);
     if (!slot) {
       return NextResponse.json({ error: "Slot not found." }, { status: 404 });
     }
+
+    // Slot detail polls while parse is pending/running. On Vercel the upload
+    // fire-and-forget often freezes mid-job — finish it on the poll request.
+    if (
+      slot.currentVersionId &&
+      (slot.parseStatus === "pending" || slot.parseStatus === "running")
+    ) {
+      await ensureParsed(slot.currentVersionId);
+      slot = (await getSlot(slotId)) ?? slot;
+    }
+
     const snapshot = await getSlotSnapshot(slotId);
     const versions = (await listVersions(slotId)).map((v) => ({
       id: v.id,

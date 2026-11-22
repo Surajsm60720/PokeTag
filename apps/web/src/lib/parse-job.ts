@@ -4,8 +4,12 @@ import { getObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
 import { saveParsedSnapshot } from "./snapshots";
 
-/** A 'running' row older than this belongs to a process that died. */
-export const STALE_RUNNING_MS = 10 * 60 * 1000;
+/**
+ * A 'running' row older than this belongs to a process that died.
+ * Keep this short: Vercel freezes fire-and-forget work when the upload
+ * response returns, so "running" often means abandoned, not busy.
+ */
+export const STALE_RUNNING_MS = 30 * 1000;
 /** One claim plus one automatic retry, then the version is marked failed. */
 export const MAX_PARSE_ATTEMPTS = 2;
 /** Default backoff before the automatic retry (tests lower it via env). */
@@ -185,11 +189,48 @@ function scheduleRetry(versionId: string): void {
   timer.unref?.();
 }
 
-/** Fire-and-forget queue (same process). */
+/**
+ * Background parse for non-upload paths (stale sweep). Prefer awaiting
+ * `parseVersion` / `ensureParsed` on the request itself — Vercel freezes a
+ * bare fire-and-forget when the HTTP response ends.
+ */
 export function queueParseVersion(versionId: string): void {
   void parseVersion(versionId).catch(() => {
     // parseVersion already records failure; swallow unhandled rejection.
   });
+}
+
+/**
+ * Finish a pending/abandoned parse during a live request (slot poll, etc.).
+ * Reclaims a wedged `running` row so serverless freezes cannot stick forever.
+ */
+export async function ensureParsed(versionId: string): Promise<void> {
+  const version = await loadVersion(versionId);
+  if (!version) return;
+  if (version.parse_status === "done" || version.parse_status === "failed") {
+    return;
+  }
+
+  if (version.parse_status === "running") {
+    const started = Date.parse(
+      version.parse_started_at || version.uploaded_at || ""
+    );
+    const age = Number.isFinite(started) ? Date.now() - started : Infinity;
+    if (age >= STALE_RUNNING_MS) {
+      const db = await getDb();
+      await db
+        .prepare(
+          `UPDATE save_versions SET parse_status = 'pending'
+            WHERE id = ? AND parse_status = 'running'`
+        )
+        .run(versionId);
+    } else {
+      // Another live worker may still own a fresh claim.
+      return;
+    }
+  }
+
+  await parseVersion(versionId);
 }
 
 /**

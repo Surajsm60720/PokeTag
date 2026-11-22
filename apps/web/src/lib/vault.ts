@@ -9,7 +9,11 @@ import {
 } from "./db";
 import { deleteObject, getObject, putObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
-import { queueParseVersion, sweepStaleParses } from "./parse-job";
+import {
+  parseVersion,
+  queueParseVersion,
+  sweepStaleParses,
+} from "./parse-job";
 import {
   getSlot as readSlot,
   listSlots as readSlots,
@@ -305,7 +309,11 @@ export async function commitUpload(input: CommitUploadInput): Promise<{
     return outcome;
   }
 
-  queueParseVersion(versionId);
+  // Await on the upload path so serverless hosts cannot freeze a
+  // fire-and-forget parse when the HTTP response ends. LGPE/etc. parse in
+  // tens of ms locally; R2 download is the slow part and still fits the
+  // upload request.
+  await parseVersion(versionId);
   return outcome;
 }
 
@@ -400,7 +408,7 @@ export async function restoreVersion(
       versionId: newId,
     });
   } else if (parseStatus !== "done") {
-    queueParseVersion(newId);
+    await parseVersion(newId);
   }
 
   return { versionId: newId };
