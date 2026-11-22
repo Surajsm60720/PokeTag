@@ -9,11 +9,7 @@ import {
 } from "./db";
 import { deleteObject, getObject, putObject } from "./storage";
 import type { ParsedSnapshot } from "./parsed";
-import {
-  parseVersion,
-  queueParseVersion,
-  sweepStaleParses,
-} from "./parse-job";
+import { parseVersion, sweepStaleParses } from "./parse-job";
 import {
   getSlot as readSlot,
   listSlots as readSlots,

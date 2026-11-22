@@ -1,12 +1,23 @@
 import Link from "next/link";
 import { formatPlayTimeShort } from "@/lib/parsed";
-import { shortGameName } from "@/lib/game-dirs";
+import { cartridgeTitleLines, shortGameName } from "@/lib/game-dirs";
 import type { SlotSummary } from "@/lib/vault";
 import { cartForm, resolveTheme } from "@/lib/theme";
 import { SpriteImage } from "./SpriteImage";
 
+/** The sticker already shows the game, so drop a repeated "Game · " prefix. */
+function stickerRun(runLabel: string, gameName: string): string {
+  const marker = " · ";
+  const cut = runLabel.indexOf(marker);
+  if (cut > 0 && runLabel.slice(0, cut) === gameName) {
+    return runLabel.slice(cut + marker.length);
+  }
+  return runLabel;
+}
+
 export function CartridgeCard({ slot }: { slot: SlotSummary }) {
   const gameName = shortGameName(slot.gameVersion);
+  const titleLines = cartridgeTitleLines(slot.gameVersion);
   const game = resolveTheme(slot.gameVersion);
   const form = cartForm(slot.generation, game);
   const party = slot.partyIcons.slice(0, 6);
@@ -19,25 +30,35 @@ export function CartridgeCard({ slot }: { slot: SlotSummary }) {
       data-form={form}
       data-recognized={slot.recognized ? "true" : "false"}
       data-parsed={slot.hasParsed ? "true" : "false"}
-      aria-label={`${gameName}, Gen ${slot.generation ?? "?"}${
-        slot.trainerName ? `, trainer ${slot.trainerName}` : ""
-      }`}
+      aria-label={`${gameName}, ${
+        slot.generation != null ? `Gen ${slot.generation}` : "spin-off"
+      }${slot.trainerName ? `, trainer ${slot.trainerName}` : ""}`}
     >
       <div className="cartridge__shell">
         <span className="cartridge__notch" aria-hidden />
 
         <div className="cartridge__label">
-          {slot.hasParsed && slot.badgeCount != null ? (
-            <span className="cartridge__badge cartridge__badge--ok">
-              {slot.badgeCount}
-            </span>
-          ) : !slot.recognized ? (
-            <span className="cartridge__badge">???</span>
-          ) : null}
           <div className="cartridge__stripe" aria-hidden />
-          <div className="cartridge__name">{gameName}</div>
+          <div className="cartridge__head">
+            <div className="cartridge__name">
+              {titleLines.map((line) => (
+                <span key={line} className="cartridge__name-line">
+                  {line}
+                </span>
+              ))}
+            </div>
+            {slot.hasParsed && slot.badgeCount != null ? (
+              <span className="cartridge__badge cartridge__badge--ok">
+                {slot.badgeCount}
+              </span>
+            ) : !slot.recognized ? (
+              <span className="cartridge__badge">???</span>
+            ) : null}
+          </div>
           {slot.runLabel ? (
-            <div className="cartridge__run">{slot.runLabel}</div>
+            <div className="cartridge__run">
+              {stickerRun(slot.runLabel, gameName)}
+            </div>
           ) : null}
           {party.length > 0 ? (
             <div className="cartridge__party" aria-hidden>
@@ -54,13 +75,16 @@ export function CartridgeCard({ slot }: { slot: SlotSummary }) {
                     shiny={p.shiny}
                     width={14}
                     height={14}
+                    loading="lazy"
                   />
                 </span>
               ))}
             </div>
           ) : null}
           <div className="cartridge__meta">
-            <span>Gen {slot.generation ?? "?"}</span>
+            <span>
+              {slot.generation != null ? `Gen ${slot.generation}` : "Spin-off"}
+            </span>
             {slot.playTimeSeconds != null ? (
               <span>{formatPlayTimeShort(slot.playTimeSeconds)}</span>
             ) : null}

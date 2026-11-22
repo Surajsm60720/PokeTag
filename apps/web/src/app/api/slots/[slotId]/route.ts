@@ -1,4 +1,6 @@
+import { requireSession } from "@/lib/auth/guard";
 import { ensureParsed } from "@/lib/parse-job";
+import { publicError } from "@/lib/public-error";
 import {
   deleteSlot,
   getSlot,
@@ -10,9 +12,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ slotId: string }> }
 ) {
+  const session = await requireSession(request);
+  if (session instanceof NextResponse) return session;
   try {
     const { slotId } = await context.params;
     let slot = await getSlot(slotId);
@@ -58,21 +62,28 @@ export async function GET(
       parseError: slot.parseError,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to load slot";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("load slot failed");
+    return NextResponse.json(
+      { error: publicError(err, "Failed to load slot") },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ slotId: string }> }
 ) {
+  const session = await requireSession(request);
+  if (session instanceof NextResponse) return session;
   try {
     const { slotId } = await context.params;
     await deleteSlot(slotId);
     return NextResponse.json({ ok: true, message: "Run deleted." });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Delete failed";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: publicError(err, "Delete failed") },
+      { status: 400 }
+    );
   }
 }

@@ -487,3 +487,26 @@ export function shortGameName(gameVersion: string): string {
   };
   return names[gameVersion] ?? gameVersion;
 }
+
+/**
+ * Deliberate line breaks for the cartridge sticker.
+ * Long titles were clipping mid-word inside the label.
+ */
+export function cartridgeTitleLines(gameVersion: string): string[] {
+  const broken: Record<string, string[]> = {
+    leafgreen: ["Leaf", "Green"],
+    heartgold: ["Heart", "Gold"],
+    soulsilver: ["Soul", "Silver"],
+    omegaruby: ["Omega", "Ruby"],
+    alphasapphire: ["Alpha", "Sapphire"],
+    ultrasun: ["Ultra", "Sun"],
+    ultramoon: ["Ultra", "Moon"],
+    letsgopikachu: ["Let's Go", "Pikachu"],
+    letsgoeevee: ["Let's Go", "Eevee"],
+    brilliantdiamond: ["Brilliant", "Diamond"],
+    shiningpearl: ["Shining", "Pearl"],
+    legendsarceus: ["Legends", "Arceus"],
+    pokkentournamentdx: ["Pokkén", "DX"],
+  };
+  return broken[gameVersion] ?? [shortGameName(gameVersion)];
+}

@@ -11,6 +11,10 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = req.nextUrl;
+  // Crawlers must be able to read this. It only says "do not index."
+  if (pathname === "/robots.txt") {
+    return NextResponse.next();
+  }
   const token = req.cookies.get(sessionCookieName())?.value;
   const session = await verifySessionToken(token);
 

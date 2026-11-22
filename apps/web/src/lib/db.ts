@@ -258,6 +258,11 @@ const MIGRATION_DDL = [
       PRIMARY KEY (device_label, slot_id),
       FOREIGN KEY (slot_id) REFERENCES save_slots(id)
     )`,
+  `CREATE TABLE IF NOT EXISTS login_attempts (
+      ip TEXT PRIMARY KEY,
+      failures INTEGER NOT NULL,
+      first_at INTEGER NOT NULL
+    )`,
   `CREATE TABLE IF NOT EXISTS parsed_snapshots (
       version_id TEXT PRIMARY KEY,
       trainer_json TEXT NOT NULL DEFAULT '{}',

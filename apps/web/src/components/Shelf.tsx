@@ -1,24 +1,19 @@
 import Link from "next/link";
 import { sortByReleaseDate } from "@/lib/release-order";
+import { themePlatform } from "@/lib/theme";
 import type { SlotSummary } from "@/lib/vault";
 import { CartridgeCard } from "./CartridgeCard";
 
-/** Group by console shelf; release order within each bay. */
+/** Group by the cart's console, not generation — Let's Go is Gen 7 on Switch. */
 function groupSlotsByConsole(slots: SlotSummary[]) {
-  const gba = sortByReleaseDate(slots.filter((s) => s.generation === 3));
-  const ds = sortByReleaseDate(
-    slots.filter((s) => s.generation === 4 || s.generation === 5)
-  );
-  const n3ds = sortByReleaseDate(
-    slots.filter((s) => s.generation === 6 || s.generation === 7)
-  );
-  const nsw = sortByReleaseDate(
-    slots.filter((s) => s.generation === 8 || s.generation === 9)
-  );
+  const of = (platform: ReturnType<typeof themePlatform>) =>
+    sortByReleaseDate(slots.filter((s) => themePlatform(s.gameVersion) === platform));
+  const gba = of("gba");
+  const ds = of("ds");
+  const n3ds = of("3ds");
+  const nsw = of("switch");
   const other = sortByReleaseDate(
-    slots.filter(
-      (s) => s.generation == null || s.generation < 3 || s.generation > 9
-    )
+    slots.filter((s) => themePlatform(s.gameVersion) === "unknown")
   );
 
   // Small collections stay on one shelf so the grid doesn't feel sparse.

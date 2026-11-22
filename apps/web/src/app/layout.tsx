@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "PokéTag",
   description:
     "Personal Pokémon save vault — fan project, not affiliated with Nintendo.",
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
@@ -28,12 +29,6 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body>
-        {publicMode ? null : (
-          <>
-            <link rel="preconnect" href="https://raw.githubusercontent.com" />
-            <link rel="dns-prefetch" href="https://raw.githubusercontent.com" />
-          </>
-        )}
         <div className="world">
           <div className="world__sky" aria-hidden />
           <div className="world__horizon" aria-hidden />

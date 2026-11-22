@@ -1163,7 +1163,7 @@ html[data-platform="ds"] .dual-screen {
 
 .cartridge-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, 128px);
+  grid-template-columns: repeat(auto-fill, 148px);
   gap: 22px 18px;
   padding: 28px 16px 20px;
   position: relative;
@@ -1183,6 +1183,7 @@ html[data-platform="ds"] .dual-screen {
   --cart-hi: #f06050;
   --cart-lo: #8a2018;
   --cart-label: #f4efd8;
+  --cart-ink: #1c1612;
   --cart-stripe: #2b2b3a;
   display: block;
   text-decoration: none;
@@ -1292,13 +1293,13 @@ html[data-platform="ds"] .dual-screen {
       var(--cart-label) 40%,
       color-mix(in srgb, var(--cart-label) 88%, #000) 100%
     );
-  color: var(--color-ink);
   border: 2px solid var(--cart-stripe);
   padding: 6px 6px 5px;
   display: flex;
   flex-direction: column;
   gap: 2px;
   overflow: hidden;
+  color: var(--cart-ink);
   text-shadow: none;
   -webkit-font-smoothing: antialiased;
   box-shadow:
@@ -1332,32 +1333,38 @@ html[data-platform="ds"] .dual-screen {
   flex: 0 0 auto;
 }
 
-.cartridge__name {
-  font-family: var(--font-ui);
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0;
-  flex: 0 0 auto;
-  max-height: 2.5em;
-  padding-right: 26px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  word-break: normal;
-  overflow-wrap: break-word;
-  hyphens: none;
+.cartridge__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 4px;
   position: relative;
   z-index: 1;
+}
+
+.cartridge__name {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--cart-ink);
+  display: flex;
+  flex-direction: column;
   text-shadow: none;
+}
+
+.cartridge__name-line {
+  display: block;
 }
 
 .cartridge__run {
   font-family: var(--font-numeric);
   font-size: 16px;
   line-height: 1.2;
-  color: color-mix(in srgb, var(--color-ink) 70%, transparent);
+  color: color-mix(in srgb, var(--cart-ink) 78%, transparent);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1371,7 +1378,7 @@ html[data-platform="ds"] .dual-screen {
   font-size: 16px;
   line-height: 1.15;
   margin-top: auto;
-  color: color-mix(in srgb, var(--color-ink) 80%, transparent);
+  color: color-mix(in srgb, var(--cart-ink) 88%, transparent);
   position: relative;
   z-index: 1;
   display: flex;
@@ -1393,12 +1400,11 @@ html[data-platform="ds"] .dual-screen {
 }
 
 .cartridge__badge {
-  position: absolute;
-  top: 8px;
-  right: 6px;
-  min-width: 24px;
-  height: 22px;
-  padding: 0 6px;
+  position: static;
+  flex: 0 0 auto;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1413,8 +1419,8 @@ html[data-platform="ds"] .dual-screen {
 }
 
 .cartridge__badge--ok {
-  background: color-mix(in srgb, var(--color-accent) 80%, #fff);
-  color: #fff8f0;
+  background: #ffe08a;
+  color: #1c1612;
 }
 
 .cartridge[data-game="firered"] {
@@ -1582,8 +1588,9 @@ html[data-platform="ds"] .dual-screen {
   --cart-body: #f5d030;
   --cart-hi: #ffe878;
   --cart-lo: #b88810;
-  --cart-label: #3a2810;
-  --cart-stripe: #e05040;
+  --cart-label: #fff6d4;
+  --cart-ink: #2a1c08;
+  --cart-stripe: #c43828;
 }
 .cartridge[data-game="letsgoeevee"] {
   --cart-body: #c89058;
@@ -1753,7 +1760,7 @@ html[data-platform="ds"] .dual-screen {
   margin-top: 8px;
   margin-left: 4px;
   border-radius: 6px;
-  border-width: 0;
+  border-width: 2px;
   height: calc(100% - 16px);
   max-height: calc(100% - 16px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.5) inset;

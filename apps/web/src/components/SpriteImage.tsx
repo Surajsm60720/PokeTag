@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { creatureGlyphUri, pokeApiSpriteUrl } from "@/lib/creature-art";
+import { creatureGlyphUri, localSpriteUrl } from "@/lib/creature-art";
 
 /**
  * Single gate for creature art.
@@ -46,7 +46,7 @@ export function SpriteImage({
 
   const remote =
     !publicMode && speciesId
-      ? pokeApiSpriteUrl(speciesId, shiny, variant)
+      ? localSpriteUrl(speciesId, shiny, variant)
       : null;
 
   const resolved = src || (!failed ? remote : null);

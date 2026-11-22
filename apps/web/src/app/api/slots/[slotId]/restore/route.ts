@@ -1,3 +1,5 @@
+import { requireSession } from "@/lib/auth/guard";
+import { publicError } from "@/lib/public-error";
 import { restoreVersion } from "@/lib/vault";
 import { NextResponse } from "next/server";
 
@@ -7,6 +9,8 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ slotId: string }> }
 ) {
+  const session = await requireSession(request);
+  if (session instanceof NextResponse) return session;
   try {
     const { slotId } = await context.params;
     const body = (await request.json()) as { versionId?: string };
@@ -19,7 +23,9 @@ export async function POST(
       message: "Your save is fully restored. We hope to see you again!",
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Restore failed";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { error: publicError(err, "Restore failed") },
+      { status: 400 }
+    );
   }
 }

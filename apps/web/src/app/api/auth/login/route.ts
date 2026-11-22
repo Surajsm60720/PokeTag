@@ -5,6 +5,7 @@ import {
   isAuthConfigured,
 } from "@/lib/auth/config";
 import { safeEqualString, verifyPassword } from "@/lib/auth/password";
+import { clientAddress } from "@/lib/auth/client-ip";
 import {
   clearLoginFailures,
   loginAllowed,
@@ -25,15 +26,15 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ip =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "local";
-
-  if (!loginAllowed(ip)) {
+  const ip = clientAddress(req.headers);
+  const gate = await loginAllowed(ip);
+  if (!gate.ok) {
     return NextResponse.json(
       { error: "Too many attempts. Try again later." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(gate.retryAfter) },
+      }
     );
   }
 
@@ -46,6 +47,13 @@ export async function POST(req: NextRequest) {
 
   const username = typeof body.username === "string" ? body.username.trim() : "";
   const password = typeof body.password === "string" ? body.password : "";
+  if (username.length > 64 || password.length > 200) {
+    await recordLoginFailure(ip);
+    return NextResponse.json(
+      { error: "Invalid username or password." },
+      { status: 401 }
+    );
+  }
 
   if (!username || !password) {
     return NextResponse.json(
@@ -59,14 +67,14 @@ export async function POST(req: NextRequest) {
   const passOk = await verifyPassword(password, getAuthPasswordHash());
 
   if (!userOk || !passOk) {
-    recordLoginFailure(ip);
+    await recordLoginFailure(ip);
     return NextResponse.json(
       { error: "Invalid username or password." },
       { status: 401 }
     );
   }
 
-  clearLoginFailures(ip);
+  await clearLoginFailures(ip);
   const { token, maxAge } = await createSessionToken(expectedUser);
   const res = NextResponse.json({ ok: true });
   res.headers.set("Set-Cookie", buildSessionCookie(token, maxAge));

@@ -76,3 +76,17 @@ export function pokeApiSpriteUrl(
     ? `${base}/shiny/${speciesId}.png`
     : `${base}/${speciesId}.png`;
 }
+
+/** Browser URL. The server fetches the picture; the page stays on this site. */
+export function localSpriteUrl(
+  speciesId: number,
+  shiny = false,
+  variant: "pixel" | "art" = "pixel"
+): string | null {
+  if (!speciesId || speciesId < 1) return null;
+  const query = new URLSearchParams();
+  if (shiny) query.set("shiny", "1");
+  if (variant === "art") query.set("variant", "art");
+  const suffix = query.toString();
+  return `/api/sprites/${speciesId}${suffix ? `?${suffix}` : ""}`;
+}
