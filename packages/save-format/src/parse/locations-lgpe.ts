@@ -103,9 +103,24 @@ export function lgpeMetLocationName(id: number): string {
   return MET[id] ?? `Location #${id}`;
 }
 
+/** Story order, not the save's town index. Saffron is town 11 but not the last city. */
+const TOWN_STORY: Record<string, number> = {
+  TOWN001: 1,
+  TOWN003: 2,
+  TOWN004: 3,
+  TOWN006: 4,
+  TOWN005: 5,
+  TOWN007: 6,
+  TOWN011: 7,
+  TOWN008: 8,
+  TOWN009: 9,
+  TOWN002: 10,
+  TOWN010: 11,
+};
+
 /**
  * Pick a display location from set FSYS_ARRIVE_* flag names.
- * Prefers the farthest town/route reached (highest index).
+ * Towns always outrank routes, so Route 25 cannot hide a city already reached.
  */
 export function lgpeLocationFromArriveFlags(
   flagNames: string[]
@@ -117,8 +132,7 @@ export function lgpeLocationFromArriveFlags(
     if (!name) continue;
     const num = Number(key.replace(/\D/g, "")) || 0;
     const isTown = key.startsWith("TOWN");
-    // Towns rank above same-number routes so Viridian beats Route 1.
-    const rank = num * 10 + (isTown ? 5 : 0);
+    const rank = isTown ? 1000 + (TOWN_STORY[key] ?? num) : num;
     if (!best || rank > best.rank) {
       best = { name, rank, mapId: isTown ? 27 + num : 2 + num };
     }

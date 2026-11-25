@@ -22,6 +22,7 @@ import type {
   ParsedInventory,
   ParsedPokemon,
   ParsedSave,
+  ParsedStoryProgress,
 } from "./types.js";
 import {
   baseSave,
@@ -51,6 +52,15 @@ const PLAY_TIME = 0x45400;
 const EW_FLAG_START = 1000 * 4;
 /** FSYS_GYM_CLEAR_* — Rock through Ground (FlagsEditorEX). */
 const GYM_FLAG_ROCK = 0x08c;
+/** Set when the champion is beaten and the credits have played. */
+const FLAG_GAME_CLEAR = 0x080;
+/**
+ * Zone-change flags for the four Elite Four rooms, in battle order:
+ * Lorelei, Bruno, Agatha, Lance. Entering the next room means the previous
+ * member was defeated. The champion room is the fifth.
+ */
+const E4_ROOM_FLAGS = [0x1e8, 0x1ea, 0x1ec, 0x1ee] as const;
+const CHAMPION_ROOM_FLAG = 0x1f0;
 
 const SLOT_EMPTY = 1001;
 const MAX_SLOTS = 1000;
@@ -270,12 +280,32 @@ function readLocation(data: Uint8Array): {
   location: string;
   locationMapId: number | null;
 } {
+  // Visit flags stay set forever, so the highest route number (Route 25)
+  // is not where the player is. A cleared game is at the League.
+  if (eventFlag(data, FLAG_GAME_CLEAR) || eventFlag(data, CHAMPION_ROOM_FLAG)) {
+    return { location: "Pokémon League", locationMapId: 53 };
+  }
   const arrived: string[] = [];
   for (const { flag, key } of ARRIVE_FLAGS) {
     if (eventFlag(data, flag)) arrived.push(key);
   }
   const fromFlags = lgpeLocationFromArriveFlags(arrived);
   return { location: fromFlags.name, locationMapId: fromFlags.mapId };
+}
+
+function readProgress(data: Uint8Array): ParsedStoryProgress {
+  const champion = eventFlag(data, FLAG_GAME_CLEAR);
+  const roomsCleared = E4_ROOM_FLAGS.filter((flag) => eventFlag(data, flag)).length;
+  const elite = champion || roomsCleared === E4_ROOM_FLAGS.length;
+  let note = "";
+  if (champion) note = "Champion defeated.";
+  else if (elite) note = "Elite Four defeated.";
+  else if (roomsCleared > 0) note = `Elite Four ${roomsCleared}/4.`;
+  return {
+    eliteFourDefeated: elite,
+    championDefeated: champion,
+    note,
+  };
 }
 
 function enrichMetLocation(mon: ParsedPokemon): ParsedPokemon {
@@ -370,5 +400,6 @@ export function parseGen7b(
     location,
     locationMapId,
     inventory: readBag(data),
+    progress: readProgress(data),
   });
 }
