@@ -67,6 +67,11 @@ export function TrainerCard({
     ? "Original bytes vaulted (immutable)"
     : "No version on file";
   const earned = snapshot?.badges.filter((b) => b.earned).length ?? 0;
+  const isAlola = ["sun", "moon", "ultrasun", "ultramoon"].includes(
+    slot.gameVersion
+  );
+  const progressLabel = isAlola ? "Kahunas" : "Badges";
+  const caseLabel = isAlola ? "GRAND TRIALS" : "BADGE CASE";
 
   async function copyHash() {
     if (!current?.sha256) return;
@@ -161,7 +166,7 @@ export function TrainerCard({
                 <dd>{snapshot.location}</dd>
               </div>
               <div>
-                <dt>Badges</dt>
+                <dt>{progressLabel}</dt>
                 <dd>
                   {earned}/{snapshot.badges.length}
                 </dd>
@@ -208,8 +213,15 @@ export function TrainerCard({
               ) : null}
             </dl>
             <div className="trainer-card__badge-case">
-              <h3 className="section-head">BADGE CASE</h3>
-              <BadgeCase badges={snapshot.badges} />
+              <h3 className="section-head">{caseLabel}</h3>
+              <BadgeCase
+                badges={snapshot.badges}
+                emptyLabel={
+                  isAlola
+                    ? "No Kahuna grand trials cleared yet."
+                    : undefined
+                }
+              />
             </div>
             {snapshot.isDemo ? (
               <p className="muted trainer-card__demo-note">

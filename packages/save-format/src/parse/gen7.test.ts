@@ -40,15 +40,22 @@ describe("parseGen7 Moon", () => {
     assert.ok(lead.maxHp > 0);
     assert.equal(lead.currentHp, lead.maxHp);
     assert.ok(lead.moves.includes("Ember"));
-    assert.ok(parsed.dex.owned >= 1);
-    assert.ok(parsed.inventory.bag.some((i) => i.name === "Poké Ball"));
-    assert.equal(parsed.badges.filter((b) => b.earned).length, 1);
+    assert.equal(parsed.dex.owned, 1);
+    assert.ok(parsed.dex.seen >= 1);
+    assert.ok(parsed.dex.entries.some((e) => e.speciesName === "Litten" && e.owned));
+    assert.ok(!parsed.dex.entries.some((e) => e.speciesName === "Stunky"));
+    assert.ok(!parsed.dex.entries.some((e) => e.speciesName === "Gible"));
+    assert.ok(parsed.inventory.bag.some((i) => i.name === "Poké Ball" && i.quantity === 15));
+    // Official Trainer passport stamp is NOT a Kahuna grand trial.
+    assert.equal(parsed.badges.filter((b) => b.earned).length, 0);
+    assert.equal(parsed.badges.length, 4);
     assert.equal(parsed.progress.championDefeated, false);
+    assert.match(parsed.progress.note, /Official Trainer|no Kahuna/i);
   });
 });
 
 describe("parseGen7 Ultra Sun", () => {
-  it("reads trainer, party, dex, stamps, location, and play time", () => {
+  it("reads trainer, party, dex, kahunas, location, and play time", () => {
     let bytes: Buffer;
     try {
       bytes = readFileSync(US_FIXTURE);
@@ -69,8 +76,9 @@ describe("parseGen7 Ultra Sun", () => {
     assert.equal(lead.level, 6);
     assert.ok(lead.maxHp > 0);
     assert.equal(lead.currentHp, lead.maxHp);
-    assert.ok(parsed.dex.owned >= 1);
-    assert.equal(parsed.badges.filter((b) => b.earned).length, 1);
+    assert.equal(parsed.dex.owned, 1);
+    assert.ok(!parsed.dex.entries.some((e) => e.speciesName === "Stunky"));
+    assert.equal(parsed.badges.filter((b) => b.earned).length, 0);
     assert.equal(parsed.progress.championDefeated, false);
   });
 });

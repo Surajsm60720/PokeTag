@@ -67,15 +67,12 @@ const KALOS = [
   "Iceberg",
 ] as const;
 
+/** Trainer Passport grand-trial stamps (Kahuna fights) — gym-badge stand-in. */
 const ALOLA = [
-  "Normalium Z",
-  "Fightinium Z",
-  "Waterium Z",
-  "Firium Z",
-  "Grassium Z",
-  "Rockium Z",
-  "Electrium Z",
-  "Ghostium Z",
+  "Melemele",
+  "Akala",
+  "Ula'ula",
+  "Poni",
 ] as const;
 
 const GALAR = [

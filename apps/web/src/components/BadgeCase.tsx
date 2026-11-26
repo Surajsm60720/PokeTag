@@ -1,9 +1,19 @@
 import { badgeArtUri } from "@/lib/badge-art";
 import type { ParsedBadge } from "@/lib/parsed";
 
-export function BadgeCase({ badges }: { badges: ParsedBadge[] }) {
+export function BadgeCase({
+  badges,
+  emptyLabel,
+}: {
+  badges: ParsedBadge[];
+  emptyLabel?: string;
+}) {
   if (!badges.length) {
-    return <p className="muted">No badges recorded for this run.</p>;
+    return (
+      <p className="muted">
+        {emptyLabel || "No badges recorded for this run."}
+      </p>
+    );
   }
 
   const earned = badges.filter((b) => b.earned).length;

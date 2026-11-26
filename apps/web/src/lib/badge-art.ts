@@ -881,6 +881,11 @@ const ART: Record<string, () => string> = {
   "sixth star": () => uri(STAR, palStar()),
   "seventh star": () => uri(STAR, palStar()),
   "eighth star": () => uri(STAR, palStar()),
+  // Alola Kahuna grand-trial passport stamps
+  melemele: () => uri(FIST, palFight()),
+  akala: () => uri(ROCK, palRock()),
+  "ula'ula": () => uri(DARK, palDark()),
+  poni: () => uri(DRAGON, palDragon()),
 };
 
 const FALLBACK = () => uri(NORMAL, palSteel());

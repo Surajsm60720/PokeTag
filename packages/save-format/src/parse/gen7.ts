@@ -181,16 +181,21 @@ function readPlayTimeSeconds(bytes: Uint8Array, off: number): number {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-/** PKHeX SAV7 getCaught / getSeen bitfields. */
+/**
+ * Caught bitfield at Zukan+0x88. Seen gender/shiny flags start at +0xF0
+ * (PKSM: PokeDex+0x08+0x80+0x68), four 0x8C-byte regions — not immediately
+ * after caught (that layout produced false Sinnoh "seen" bits).
+ */
 function parseDex(
   bytes: Uint8Array,
   pokeDex: number,
   maxSpecies: number
 ): ReturnType<typeof countDexBits> {
-  const flags = pokeDex + 0x88;
+  const caught = pokeDex + 0x88;
+  const seenBase = pokeDex + 0xf0;
   const brSize = 0x8c;
   const byteCount = Math.ceil(maxSpecies / 8);
-  if (flags + brSize * 4 + byteCount > bytes.length) {
+  if (seenBase + brSize * 4 > bytes.length) {
     return emptyDex(maxSpecies);
   }
 
@@ -199,12 +204,12 @@ function parseDex(
   for (let i = 0; i < maxSpecies; i++) {
     const bd = i >> 3;
     const mask = 1 << (i & 7);
-    if ((bytes[flags + bd]! & mask) !== 0) {
+    if ((bytes[caught + bd]! & mask) !== 0) {
       owned[bd]! |= mask;
       seen[bd]! |= mask;
     }
-    for (let region = 1; region <= 4; region++) {
-      const at = flags + bd + region * brSize;
+    for (let region = 0; region < 4; region++) {
+      const at = seenBase + bd + region * brSize;
       if (at < bytes.length && (bytes[at]! & mask) !== 0) {
         seen[bd]! |= mask;
         break;
@@ -299,30 +304,43 @@ function parseInventory(
   return { bag, pc: [] };
 }
 
-/** PKHeX Misc.Stamps — 15 island-challenge bits packed above the low nibble. */
-function readStampMask(bytes: Uint8Array, stampsOff: number): number {
+/**
+ * Trainer Passport stamps (Misc+0x08 bits 4…18).
+ * bit0 Official Trainer (after starter) — not a Kahuna fight
+ * bit1–4 Melemele / Akala / Ula'ula / Poni grand trials
+ * bit5 Island Challenge Completion (Champion)
+ */
+function readPassportStamps(bytes: Uint8Array, stampsOff: number): number {
   if (stampsOff + 4 > bytes.length) return 0;
   const word = readU32LE(bytes, stampsOff);
   return (word << 13) >>> 17;
 }
 
+/** Bits 1–4 → the four Kahuna grand-trial stamps (badge-case stand-in). */
+function kahunaMask(passport: number): number {
+  return (passport >>> 1) & 0x0f;
+}
+
 function parseStoryProgress(
   bytes: Uint8Array,
   layout: Gen7Layout,
-  stampMask: number
+  passport: number
 ): ParsedStoryProgress {
   let hofOccupied = false;
   if (layout.hallOfFame + 4 <= bytes.length) {
     const head = readU32LE(bytes, layout.hallOfFame);
     hofOccupied = head !== 0 && head !== 0xffffffff;
   }
-  const stamps = popcount15(stampMask);
-  const championDefeated = hofOccupied;
+  const kahunas = popcountN(kahunaMask(passport), 4);
+  const islandDone = ((passport >>> 5) & 1) === 1;
+  const championDefeated = hofOccupied || islandDone;
   let note = "";
   if (championDefeated) {
-    note = "Hall of Fame set — Champion cleared.";
-  } else if (stamps > 0) {
-    note = `${stamps} island challenge stamp${stamps === 1 ? "" : "s"} earned.`;
+    note = "Island Challenge Completion — Champion cleared.";
+  } else if (kahunas > 0) {
+    note = `${kahunas}/4 Kahuna grand trial${kahunas === 1 ? "" : "s"} cleared.`;
+  } else if ((passport & 1) === 1) {
+    note = "Official Trainer stamp only — no Kahuna grand trials yet.";
   } else {
     note = "Island challenge not started — Champion still open.";
   }
@@ -333,9 +351,9 @@ function parseStoryProgress(
   };
 }
 
-function popcount15(mask: number): number {
+function popcountN(mask: number, bits: number): number {
   let n = 0;
-  for (let i = 0; i < 15; i++) if ((mask >>> i) & 1) n++;
+  for (let i = 0; i < bits; i++) if ((mask >>> i) & 1) n++;
   return n;
 }
 
@@ -370,7 +388,8 @@ export function parseGen7(
       : "";
   const money =
     layout.money + 4 <= bytes.length ? readU32LE(bytes, layout.money) : 0;
-  const stampMask = readStampMask(bytes, layout.stamps);
+  const passport = readPassportStamps(bytes, layout.stamps);
+  const stampMask = kahunaMask(passport);
 
   const mapId =
     layout.situation + 2 <= bytes.length
@@ -432,6 +451,6 @@ export function parseGen7(
     location,
     locationMapId: locationId || mapId || null,
     inventory: parseInventory(bytes, layout),
-    progress: parseStoryProgress(bytes, layout, stampMask),
+    progress: parseStoryProgress(bytes, layout, passport),
   });
 }
