@@ -15,6 +15,7 @@ import type {
   ParsedPokemon,
   ParsedSave,
 } from "./types.js";
+import { unovaLocationName, unovaMapName } from "./unova-maps.js";
 import {
   baseSave,
   compactParty,
@@ -281,8 +282,9 @@ export function parseGen5(
   const partySlots: Array<ParsedPokemon | null> = [];
   for (let i = 0; i < partyCount; i++) {
     const base = layout.party + i * PARTY;
-    if (base + STORED > data.length) break;
-    const mon = parsePk5Box(data.subarray(base, base + STORED), i);
+    if (base + PARTY > data.length) break;
+    // Pass the full party structure so battle stats (HP) can decrypt.
+    const mon = parsePk5Box(data.subarray(base, base + PARTY), i);
     if (mon) partySlots.push(mon);
   }
 
@@ -303,6 +305,18 @@ export function parseGen5(
     layout.position + 0x80 + 4 <= data.length
       ? readU32LE(data, layout.position + 0x80) & 0xffff
       : 0;
+  // Overworld State (0x1E200) mirrors the map header id at +0x10 and often
+  // stores the map-name table index at +0x18 (reliable on BW; prefer header table).
+  const overworld = 0x1e200;
+  const nameIndex =
+    overworld + 0x1a <= data.length ? data[overworld + 0x18] ?? 0 : 0;
+  let location = mapId ? unovaMapName(mapId) : "";
+  if ((!location || location.startsWith("Map ")) && nameIndex > 0) {
+    const fromIndex = unovaLocationName(nameIndex);
+    if (fromIndex && !fromIndex.startsWith("Location #")) {
+      location = fromIndex;
+    }
+  }
   const secondsToFame =
     layout.adventure + 0x40 <= data.length
       ? readU32LE(data, layout.adventure + 0x3c)
@@ -322,7 +336,7 @@ export function parseGen5(
     dex: parseDex(data, layout.dex),
     badges: badgesFromBitmask(game, badgeMask, 8),
     playTimeSeconds: hours * 3600 + minutes * 60 + seconds,
-    location: mapId ? `Map ${mapId}` : "",
+    location,
     locationMapId: mapId || null,
     inventory: parseInventory(data, layout.inventory),
     progress: {

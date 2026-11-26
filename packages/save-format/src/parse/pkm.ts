@@ -485,8 +485,10 @@ export function parsePk4Box(
   const level = levelFromSpeciesExp(speciesId, experience);
   let currentHp = 0;
   let maxHp = 0;
-  if (raw.length >= 236) {
-    const stats = raw.subarray(0x88, 0xec);
+  // Party trailer: PK4 is 236 bytes, PK5 is 220. Stats start at 0x88 and are
+  // encrypted with the PID (not the checksum), without block shuffling.
+  if (raw.length >= 220) {
+    const stats = raw.subarray(0x88);
     const decryptedStats = decryptPkmBlock(stats, personality);
     const statsView =
       decryptedStats[4] === level

@@ -57,10 +57,37 @@ describe("parseGen5 White", () => {
     assert.equal(parsed.playTimeSeconds, 25 * 60 + 14);
     assert.equal(parsed.badges.filter((b) => b.earned).length, 0);
     assert.ok(parsed.party.length >= 1);
+    const lead = parsed.party[0]!;
+    assert.ok(lead.maxHp > 0, `expected HP, got ${lead.currentHp}/${lead.maxHp}`);
+    assert.equal(lead.currentHp, lead.maxHp);
+    assert.equal(parsed.location, "Nuvema Town");
     assert.ok(parsed.inventory.bag.length > 0);
     assert.ok(parsed.dex.owned >= 1);
     assert.equal(parsed.progress.championDefeated, false);
     assert.equal(parsed.progress.eliteFourDefeated, false);
     assert.ok(parsed.locationMapId);
+  });
+});
+
+describe("parseGen5 White 2", () => {
+  it("reads location and party HP from a real White 2 save", () => {
+    let bytes: Buffer;
+    try {
+      bytes = readFileSync("/tmp/poketag-gen5/white2-2e539cdc.sav");
+    } catch {
+      return;
+    }
+    const detection = detectSave(
+      bytes,
+      "Pokemon - White Version 2 (USA, Europe) (NDSi Enhanced).sav"
+    );
+    assert.equal(detection.gameVersion, "white2");
+    const parsed = parseGen5(bytes, detection);
+    assert.equal(parsed.gameVersion, "white2");
+    assert.equal(parsed.location, "Aspertia City");
+    assert.ok(parsed.party.length >= 1);
+    const lead = parsed.party[0]!;
+    assert.ok(lead.maxHp > 0);
+    assert.equal(lead.currentHp, lead.maxHp);
   });
 });
