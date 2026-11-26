@@ -222,8 +222,12 @@ function parseDex(
 type PocketKind = ParsedBagItem["pocket"];
 
 /**
- * Gen 7 Free Space pouches are u16 id + u16 qty. Unowned catalog slots use
- * high bits on the id (0xDxxx) — only clean ids with a real stack count count.
+ * PKHeX InventoryItem7 / getPouch7 packing:
+ *   Index     = value & 0x3FF
+ *   Count     = (value >> 10) & 0x3FF
+ *   FreeSpace = (value & 0x100000) != 0
+ *   New       = (value & 0x40000000) != 0
+ * Empty sentinel Index is 0 or 0x3FF. Count 0 = not owned (even if Index set).
  */
 function readPouch(
   bytes: Uint8Array,
@@ -235,9 +239,11 @@ function readPouch(
   for (let i = 0; i < slots; i++) {
     const off = start + i * 4;
     if (off + 4 > bytes.length) break;
-    const id = readU16LE(bytes, off);
-    const quantity = readU16LE(bytes, off + 2);
-    if (id === 0 || id >= 0x800) continue;
+    const value = readU32LE(bytes, off);
+    if (value === 0) continue;
+    const id = value & 0x3ff;
+    const quantity = (value >>> 10) & 0x3ff;
+    if (id === 0 || id === 0x3ff) continue;
     if (quantity === 0 || quantity > 999) continue;
     out.push({
       id,

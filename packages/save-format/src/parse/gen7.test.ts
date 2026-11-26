@@ -45,7 +45,10 @@ describe("parseGen7 Moon", () => {
     assert.ok(parsed.dex.entries.some((e) => e.speciesName === "Litten" && e.owned));
     assert.ok(!parsed.dex.entries.some((e) => e.speciesName === "Stunky"));
     assert.ok(!parsed.dex.entries.some((e) => e.speciesName === "Gible"));
-    assert.ok(parsed.inventory.bag.some((i) => i.name === "Poké Ball" && i.quantity === 15));
+    // getPouch7: these HaX saves stock ~950 of most items; Poké Balls decode as 960.
+    assert.ok(parsed.inventory.bag.some((i) => i.name === "Poké Ball" && i.quantity === 960));
+    assert.ok(parsed.inventory.bag.length > 100);
+    assert.ok(parsed.inventory.bag.some((i) => i.name === "TM01" && i.quantity === 1));
     // Official Trainer passport stamp is NOT a Kahuna grand trial.
     assert.equal(parsed.badges.filter((b) => b.earned).length, 0);
     assert.equal(parsed.badges.length, 4);
@@ -80,5 +83,10 @@ describe("parseGen7 Ultra Sun", () => {
     assert.ok(!parsed.dex.entries.some((e) => e.speciesName === "Stunky"));
     assert.equal(parsed.badges.filter((b) => b.earned).length, 0);
     assert.equal(parsed.progress.championDefeated, false);
+    // Free Space getPouch7 — full item/TM/Z catalog present on this HaX save.
+    assert.ok(parsed.inventory.bag.length > 100);
+    assert.ok(parsed.inventory.bag.some((i) => i.name === "Master Ball" && i.quantity === 950));
+    assert.ok(parsed.inventory.bag.some((i) => i.name === "Normalium Z" && i.quantity === 1));
+    assert.ok(parsed.inventory.bag.some((i) => i.name === "TM01" && i.quantity === 1));
   });
 });
