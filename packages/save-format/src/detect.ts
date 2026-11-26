@@ -250,6 +250,14 @@ const GEN6_GAME_BYTE: Record<number, GameVersion> = {
   27: "omegaruby",
 };
 
+/** PKHeX GameVersion values stored in Gen 7 MyStatus+0x04. */
+const GEN7_GAME_BYTE: Record<number, GameVersion> = {
+  30: "sun",
+  31: "moon",
+  32: "ultrasun",
+  33: "ultramoon",
+};
+
 function peekGen6GameByte(
   data: Buffer,
   payloadSize: number
@@ -257,6 +265,31 @@ function peekGen6GameByte(
   if (payloadSize !== 0x65600 && payloadSize !== 0x76000) return null;
   if (data.length < 0x14005) return null;
   return GEN6_GAME_BYTE[data[0x14004]!] ?? null;
+}
+
+/**
+ * Gen 7 SM / USUM MyStatus game byte (same field layout as Gen 6).
+ * SM MyStatus @ 0x1200, USUM MyStatus @ 0x1400 — Game is +4.
+ */
+function peekGen7GameByte(
+  data: Buffer,
+  payloadSize: number
+): GameVersion | null {
+  let gameOff = -1;
+  if (payloadSize === 0x6be00) gameOff = 0x1204;
+  else if (payloadSize === 0x6cc00) gameOff = 0x1404;
+  else return null;
+  if (data.length <= gameOff) return null;
+  return GEN7_GAME_BYTE[data[gameOff]!] ?? null;
+}
+
+function peekModernGameByte(
+  data: Buffer,
+  payloadSize: number
+): GameVersion | null {
+  return (
+    peekGen6GameByte(data, payloadSize) ?? peekGen7GameByte(data, payloadSize)
+  );
 }
 
 function generationForGame(game: GameVersion): Generation {
@@ -406,7 +439,7 @@ export function detectSave(
   }
 
   // Decrypted Gen 6/7 mains store the PKHeX GameVersion byte in MyStatus.
-  const fromStatus = lgpe ? null : peekGen6GameByte(data, payloadSize);
+  const fromStatus = lgpe ? null : peekModernGameByte(data, payloadSize);
   if (fromStatus) {
     if (gameVersion === "unknown" || gameVersion !== fromStatus) {
       if (gameVersion !== "unknown" && gameVersion !== fromStatus) {

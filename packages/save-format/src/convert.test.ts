@@ -68,6 +68,36 @@ describe("detectSave", () => {
     assert.equal(result.recognized, true);
   });
 
+  it("reads Moon / Ultra Moon from the Gen 7 MyStatus game byte", () => {
+    const moon = Buffer.alloc(0x6be00, 0);
+    moon[0x1204] = 31; // PKHeX GameVersion.MN
+    const moonResult = detectSave(moon, "main", { hint: "Pokemon Sun" });
+    assert.equal(moonResult.gameVersion, "moon");
+    assert.equal(moonResult.generation, 7);
+    assert.equal(moonResult.recognized, true);
+
+    const ultraMoon = Buffer.alloc(0x6cc00, 0);
+    ultraMoon[0x1404] = 33; // PKHeX GameVersion.UM
+    const umResult = detectSave(ultraMoon, "main", {
+      hint: "Pokemon Ultra Sun",
+    });
+    assert.equal(umResult.gameVersion, "ultramoon");
+    assert.equal(umResult.generation, 7);
+    assert.equal(umResult.recognized, true);
+
+    const ultraSun = Buffer.alloc(0x6cc00, 0);
+    ultraSun[0x1404] = 32; // PKHeX GameVersion.US
+    assert.equal(detectSave(ultraSun, "main").gameVersion, "ultrasun");
+  });
+
+  it("infers Moon from filename when MyStatus game byte is missing", () => {
+    const data = Buffer.alloc(0x6be00, 0);
+    assert.equal(
+      detectSave(data, "Pokemon - Moon Version.sav").gameVersion,
+      "moon"
+    );
+  });
+
   it("recognizes Pokkén Tournament DX .np dumps", () => {
     const data = Buffer.alloc(4096, 1);
     const result = detectSave(data, "pokken.np");
