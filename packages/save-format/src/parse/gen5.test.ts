@@ -5,7 +5,7 @@ import { describe, it } from "node:test";
 import { detectSave } from "../detect.js";
 import { parseGen5 } from "./gen5.js";
 
-const WHITE_FIXTURE = "/tmp/poketag-gen45/white-12fecf78.sav";
+const WHITE_FIXTURE = "/tmp/poketag-gen5/white-12fecf78.sav";
 
 describe("detect Gen 5 filenames", () => {
   it("classifies No-Intro White Version 2 / Black Version 2 as sequels", () => {
@@ -60,7 +60,8 @@ describe("parseGen5 White", () => {
     const lead = parsed.party[0]!;
     assert.ok(lead.maxHp > 0, `expected HP, got ${lead.currentHp}/${lead.maxHp}`);
     assert.equal(lead.currentHp, lead.maxHp);
-    assert.equal(parsed.location, "Nuvema Town");
+    assert.equal(parsed.location, "Accumula Town");
+    assert.equal(parsed.locationMapId, 397);
     assert.ok(parsed.inventory.bag.length > 0);
     assert.ok(parsed.dex.owned >= 1);
     assert.equal(parsed.progress.championDefeated, false);

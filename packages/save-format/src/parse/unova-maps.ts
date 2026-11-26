@@ -144,25 +144,25 @@ const B2W2_EXTRA: Record<number, string> = {
 };
 
 /**
- * Known SDSME map-header IDs for outdoor hubs. Interiors between two hubs
- * inherit the earlier hub's name (SDSME lists interiors under the same label).
+ * Map-header ID ranges (inclusive). Outdoor header first, then interiors —
+ * sourced from romhacking notes (Nuvema 389, Aspertia 427) and PokéMaps zone
+ * pages (Nuvema interiors 390–396, Accumula interiors 398–405).
  */
-const MAP_HEADER_OUTDOOR: Array<{ id: number; name: string }> = [
-  // Black / White — Nuvema is header 389; early interiors follow it.
-  { id: 389, name: "Nuvema Town" },
-  // Black 2 / White 2 — Aspertia outdoor is header 427.
-  { id: 427, name: "Aspertia City" },
+const MAP_HEADER_RANGES: Array<{ from: number; to: number; name: string }> = [
+  { from: 389, to: 396, name: "Nuvema Town" },
+  { from: 397, to: 405, name: "Accumula Town" },
+  // Aspertia outdoor is 427; keep a modest interior window until the next hub
+  // is documented the same way.
+  { from: 427, to: 450, name: "Aspertia City" },
 ];
 
 const HEADER_CACHE = new Map<number, string>();
-/** SDSME lists a town's interiors immediately after its outdoor header. */
-const INTERIOR_SPAN = 24;
 
 function buildHeaderCache(): void {
   if (HEADER_CACHE.size > 0) return;
-  for (const { id, name } of MAP_HEADER_OUTDOOR) {
-    for (let i = 0; i < INTERIOR_SPAN; i++) {
-      HEADER_CACHE.set(id + i, name);
+  for (const { from, to, name } of MAP_HEADER_RANGES) {
+    for (let id = from; id <= to; id++) {
+      HEADER_CACHE.set(id, name);
     }
   }
 }
