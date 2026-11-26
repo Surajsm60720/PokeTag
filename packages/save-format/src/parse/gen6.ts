@@ -310,7 +310,7 @@ export function parseGen6(
   const badgeMask =
     layout.badges < bytes.length ? (bytes[layout.badges] ?? 0) : 0;
 
-  // Situation.M is a zonedata entry for XY (not a location index).
+  // Situation.M is a zonedata index for both XY and ORAS.
   const zoneOff = layout.situation + 0x02;
   const zoneId = zoneOff + 2 <= bytes.length ? readU16LE(bytes, zoneOff) : 0;
   const { locationId, name: location } = gen6SituationLocation(

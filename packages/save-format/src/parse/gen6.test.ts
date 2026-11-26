@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 
 import { detectSave } from "../detect.js";
@@ -36,8 +37,28 @@ describe("gen6LocationName", () => {
       locationId: 10,
       name: "Aquacorde Town",
     });
-    // ORAS uses location indexes directly when named.
-    assert.equal(gen6SituationLocation(286, "oras").name, "Jagged Pass");
+    // ORAS Situation.M is a zone id. 7 is Oldale, 286 is a Rustboro interior.
+    assert.deepEqual(gen6SituationLocation(7, "oras"), {
+      locationId: 172,
+      name: "Oldale Town",
+    });
+    assert.equal(gen6SituationLocation(6, "oras").name, "Littleroot Town");
+    assert.equal(gen6SituationLocation(23, "oras").name, "Route 101");
+    assert.equal(gen6SituationLocation(286, "oras").name, "Rustboro City");
+  });
+
+  it("reads Oldale Town from the local Omega Ruby save", () => {
+    let data: Buffer;
+    try {
+      data = readFileSync("/tmp/poketag-oras/main");
+    } catch {
+      return;
+    }
+    const parsed = parseGen6(data, detectSave(data, "main"));
+    assert.equal(parsed.gameVersion, "omegaruby");
+    assert.equal(parsed.trainer.name, "Suraj");
+    assert.equal(parsed.location, "Oldale Town");
+    assert.equal(parsed.locationMapId, 172);
   });
 });
 
