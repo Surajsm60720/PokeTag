@@ -7,6 +7,8 @@ import { parseGen4 } from "./gen4.js";
 import { hgssMapName } from "./hgss-maps.js";
 import { crc16Ccitt, parsePk4Box } from "./pkm.js";
 import { levelFromSpeciesExp } from "./exp.js";
+import { sinnohMapName } from "./sinnoh-maps.js";
+import { readFileSync } from "node:fs";
 
 function writeGen4(block: Buffer, offset: number, text: string): void {
   for (let i = 0; i < 8; i++) {
@@ -83,6 +85,12 @@ describe("parseGen4 HeartGold", () => {
     assert.equal(hgssMapName(9999), "Map 9999");
   });
 
+  it("names Platinum Sandgem / Twinleaf map headers", () => {
+    assert.equal(sinnohMapName(418), "Sandgem Town");
+    assert.equal(sinnohMapName(411), "Twinleaf Town");
+    assert.equal(sinnohMapName(3), "Jubilife City");
+  });
+
   it("reads a HeartGold block whose CRC is stale but whose footer still matches", () => {
     const save = Buffer.alloc(0x80000, 0xff);
     const general = save.subarray(0, 0xf628);
@@ -145,5 +153,28 @@ describe("parseGen4 HeartGold", () => {
     assert.deepEqual(mon.moves, ["Tackle", "Leer", "Smokescreen"]);
     assert.equal(mon.ability, "Blaze");
     assert.equal(mon.originGame, "HeartGold");
+  });
+});
+
+describe("parseGen4 Platinum", () => {
+  it("reads bag, dex, location, and progress from a real Platinum save", () => {
+    let bytes: Buffer;
+    try {
+      bytes = readFileSync("/tmp/poketag-gen45/platinum-e4d66103.sav");
+    } catch {
+      return;
+    }
+    const detection = detectSave(bytes, "Pokemon - Platinum Version (USA).sav");
+    const parsed = parseGen4(bytes, detection);
+    assert.equal(parsed.gameVersion, "platinum");
+    assert.equal(parsed.trainer.name, "Suraj");
+    assert.equal(parsed.location, "Sandgem Town");
+    assert.equal(parsed.locationMapId, 418);
+    assert.ok(parsed.inventory.bag.length > 0);
+    assert.equal(parsed.dex.owned, 1);
+    assert.ok(parsed.dex.seen >= 1);
+    assert.equal(parsed.progress.championDefeated, false);
+    assert.equal(parsed.progress.eliteFourDefeated, false);
+    assert.ok(parsed.party.some((p) => p.speciesName === "Chimchar"));
   });
 });

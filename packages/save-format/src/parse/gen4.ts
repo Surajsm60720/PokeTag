@@ -13,6 +13,7 @@ import { decodeGen4String } from "./charset.js";
 import { hgssMapName } from "./hgss-maps.js";
 import { itemName } from "./items.js";
 import { crc16Ccitt, parsePk4Box } from "./pkm.js";
+import { sinnohMapName } from "./sinnoh-maps.js";
 import type { ParsedBagItem, ParsedInventory, ParsedPokemon, ParsedSave } from "./types.js";
 import {
   baseSave,
@@ -88,10 +89,19 @@ const PLATINUM: Gen4Layout = {
   boxStride: 0,
   boxCount: 18,
   slotsPerBox: 30,
-  bag: null,
-  dexOwned: null,
-  dexSeen: null,
-  map: null,
+  // PlayerBag4Pt base 0x630 — pouch ends are exclusive.
+  bag: {
+    items: [0x630, 0x8c4],
+    key: [0x8c4, 0x98c],
+    tmhm: [0x98c, 0xb1c],
+    medicine: [0xb4c, 0xbec],
+    berries: [0xbec, 0xcec],
+    balls: [0xcec, 0xd28],
+  },
+  // Zukan4 at 0x1328: u32 magic, then caught / seen regions of 0x40 bytes.
+  dexOwned: 0x132c,
+  dexSeen: 0x136c,
+  map: 0x1280,
   kantoBadges: null,
 };
 
@@ -223,12 +233,20 @@ function parseInventory(general: Uint8Array, bag: BagSpans): ParsedInventory {
 
 function parseDex(general: Uint8Array, layout: Gen4Layout) {
   if (layout.dexOwned == null || layout.dexSeen == null) return emptyDex(493);
-  const owned = general.subarray(layout.dexOwned, layout.dexOwned + 62);
-  const seen = new Uint8Array(62);
-  const sources = [layout.dexSeen, 0x133c, 0x137c];
-  for (const src of sources) {
-    for (let i = 0; i < 62 && src + i < general.length; i++) {
-      seen[i] = (seen[i] ?? 0) | (general[src + i] ?? 0) | (owned[i] ?? 0);
+  // Zukan4 regions are 0x40 bytes (512 bits); only the first 493 species count.
+  const region = 0x40;
+  const owned = general.subarray(layout.dexOwned, layout.dexOwned + region);
+  const seen = new Uint8Array(region);
+  for (let i = 0; i < region && layout.dexSeen + i < general.length; i++) {
+    seen[i] =
+      (general[layout.dexSeen + i] ?? 0) | (owned[i] ?? 0);
+  }
+  // HGSS mirrors seen flags; OR the extra copies when present.
+  if (layout.id === "hgss") {
+    for (const src of [0x133c, 0x137c]) {
+      for (let i = 0; i < region && src + i < general.length; i++) {
+        seen[i] = (seen[i] ?? 0) | (general[src + i] ?? 0);
+      }
     }
   }
   return countDexBits(owned, seen, 493, 493);
@@ -286,8 +304,10 @@ export function parseGen4(
   const minutes = general[trainer + 0x24] ?? 0;
   const seconds = general[trainer + 0x25] ?? 0;
   const progress = general[trainer + 0x1d] ?? 0;
+  // AdventureInfo sits at 0 for DP/Pt/HGSS; SecondsToFame is +0x3C.
   const secondsToFame = readU32LE(general, 0x3c);
-  const champion = (progress & 1) === 1 || secondsToFame > 0;
+  const champion =
+    (progress & 1) === 1 || (secondsToFame > 0 && secondsToFame < 0xffffffff);
   const partyCount = Math.min(6, general[layout.party - 4] ?? 0);
 
   const partySlots: Array<ParsedPokemon | null> = [];
@@ -344,15 +364,20 @@ export function parseGen4(
       layout.kantoBadges != null ? 16 : 8
     ),
     playTimeSeconds: hours * 3600 + minutes * 60 + seconds,
-    location: layout.id === "hgss" ? hgssMapName(mapId) : mapId ? `Map ${mapId}` : "",
+    location:
+      layout.id === "hgss"
+        ? hgssMapName(mapId)
+        : mapId
+          ? sinnohMapName(mapId)
+          : "",
     locationMapId: mapId || null,
     inventory: layout.bag ? parseInventory(general, layout.bag) : { bag: [], pc: [] },
     progress: {
-      eliteFourDefeated: champion ? true : null,
+      eliteFourDefeated: champion,
       championDefeated: champion,
       note: champion
-        ? "Game clear flag or Hall of Fame time is set."
-        : "No game-clear flag yet.",
+        ? "Game clear flag or Hall of Fame time is set — Champion and Elite Four cleared."
+        : "No Hall of Fame entry yet — Champion and Elite Four still open.",
     },
   });
 }

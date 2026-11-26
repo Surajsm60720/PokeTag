@@ -2,6 +2,7 @@ import {
   desmumePayloadLength,
   hasDesmumeFooter,
 } from "./desmume.js";
+import { peekGen5GameByte } from "./parse/gen5.js";
 import { isLgpeSave, peekLgpeGame } from "./parse/gen7b.js";
 import type {
   DetectionResult,
@@ -171,6 +172,11 @@ const FILENAME_GAMES: Array<{ needle: string; game: GameVersion }> = [
   { needle: "soulsilver", game: "soulsilver" },
   { needle: "soul-silver", game: "soulsilver" },
   { needle: "soul silver", game: "soulsilver" },
+  // No-Intro style: "Black Version 2" / "White Version 2" must beat plain Black/White.
+  { needle: "black version 2", game: "black2" },
+  { needle: "white version 2", game: "white2" },
+  { needle: "blackversion2", game: "black2" },
+  { needle: "whiteversion2", game: "white2" },
   { needle: "black2", game: "black2" },
   { needle: "black-2", game: "black2" },
   { needle: "black 2", game: "black2" },
@@ -412,7 +418,31 @@ export function detectSave(
       }
       gameVersion = fromStatus;
     }
-  } else if (gameVersion === "unknown" && lgpe) {
+  }
+
+  // Gen 5 Trainer Data game byte distinguishes BW from B2W2 (and Black from White).
+  const fromGen5 =
+    !lgpe && !fromStatus && DS_SIZES.has(payloadSize)
+      ? peekGen5GameByte(data.subarray(0, payloadSize))
+      : null;
+  if (fromGen5) {
+    const filenameIsGen4 =
+      gameVersion !== "unknown" &&
+      GEN4.has(gameVersion) &&
+      !GEN5.has(gameVersion);
+    if (!filenameIsGen4 && (gameVersion === "unknown" || gameVersion !== fromGen5)) {
+      if (gameVersion !== "unknown" && gameVersion !== fromGen5) {
+        notes.push(
+          `Filename/label said ${gameVersion}, but Gen 5 header is ${fromGen5}.`
+        );
+      } else if (gameVersion === "unknown") {
+        notes.push(`Game read from Gen 5 trainer block (${fromGen5}).`);
+      }
+      gameVersion = fromGen5;
+    }
+  }
+
+  if (gameVersion === "unknown" && lgpe) {
     gameVersion = "letsgopikachu";
     notes.push("Let's Go SAV7b detected; defaulting to Let's Go Pikachu.");
   } else if (gameVersion === "unknown" && modern?.softGame) {
